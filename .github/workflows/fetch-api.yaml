@@ -90,6 +90,7 @@ jobs:
     if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
     strategy:
       matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
+      fail-fast: false
 
     steps:
     - name: Fetch code
@@ -123,6 +124,7 @@ jobs:
     if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
     strategy:
       matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
+      fail-fast: false
 
     steps:
     - name: Fetch devops code
