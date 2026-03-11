@@ -45,7 +45,6 @@ jobs:
           "fetch-api            | fetch_api             | common    | dragon699/fetch-api/fetch-api"
           "connector-downloader | connectors/downloader | common-go | dragon699/fetch-api/connectors/downloader"
           "connector-grafana    | connectors/grafana    | common    | dragon699/fetch-api/connectors/grafana"
-          "connector-kube       | connectors/kube       | common-go | dragon699/fetch-api/connectors/kube"
           "connector-ml         | connectors/ml         | common    | dragon699/fetch-api/connectors/ml"
           "connector-slack      | connectors/slack      | common-go | dragon699/fetch-api/connectors/slack"
         )

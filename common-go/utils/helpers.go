@@ -357,7 +357,7 @@ func RenderTemplate(templatePath string, templateVars any, embeddedFiles embed.F
 		return "", fmt.Errorf("[%s] Invalid or missing template file: %s", err, templatePath)
 	}
 
-	templateContent, err := renderTemplateContent(templatePath, string(templateBytes), templateVars)
+	templateContent, err := RenderTemplateContent(templatePath, string(templateBytes), templateVars)
 
 	if err != nil {
 		return "", fmt.Errorf("[%s] Failed to render embedded template file: %w", templatePath, err)
@@ -366,7 +366,7 @@ func RenderTemplate(templatePath string, templateVars any, embeddedFiles embed.F
 	return templateContent, nil
 }
 
-func renderTemplateContent(templateName string, templateContent string, vars any) (string, error) {
+func RenderTemplateContent(templateName string, templateContent string, vars any) (string, error) {
 	tpl, err := template.New(templateName).Funcs(template.FuncMap{
 		"json":         templateJSON,
 		"beautifyTime": TimeFromGrafana,
