@@ -1,0 +1,103 @@
+name: fetch-api
+run-name: Deploy fetch-api
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+    - '.github/workflows/fetch-api-wip.yaml'
+    - 'fetch_api/**'
+    - 'connectors/**'
+    - 'common/**'
+    - 'common-go/**'
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: "ghcr.io"
+  APP_REPO: "dragon699/home-k8s"
+  ARGOCD_BIN_URL: "https://${{ secrets.ARGOCD_SERVER }}/download/argocd-linux-amd64"
+
+
+
+jobs:
+
+  Inspect:
+    runs-on: gha-runner-fetch-api
+    outputs:
+      items: ${{ steps.items_to_build.outputs.items }}
+    
+    steps:
+    - name: Fetch code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Prepare build candidates
+      id: items_to_build
+      run: |
+        set -euo pipefail
+
+        BASE_SHA="${{ github.event.before }}"
+        ITEMS=(
+          "fetch-api | fetch_api | common | dragon699/home-k8s/fetch-api/fetch-api"
+          "connector-downloader | connectors/downloader | common-go | dragon699/home-k8s/fetch-api/connectors/downloader"
+          "connector-grafana | connectors/grafana | common | dragon699/home-k8s/fetch-api/connectors/grafana"
+          "connector-kube | connectors/kube | common-go | dragon699/home-k8s/fetch-api/connectors/kube"
+          "connector-ml | connectors/ml | common | dragon699/home-k8s/fetch-api/connectors/ml"
+          "connector-slack | connectors/slack | common-go | dragon699/home-k8s/fetch-api/connectors/slack"
+        )
+        ITEMS_TO_BUILD=()
+
+        if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+          BASE_SHA="$(git rev-parse "${{ github.sha }}^" 2>/dev/null || git hash-object -t tree /dev/null)"
+        fi
+
+        CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "${{ github.sha }}")"
+
+        for ITEM in "${ITEMS[@]}"; do
+          NAME="${ITEM%% | *}"
+          REST="${ITEM#* | }"
+          PATH="${REST%% | *}"
+          REST="${REST#* | }"
+          DEPS="${REST%% | *}"
+          IMAGE_NAME="${REST#* | }"
+
+          if grep -qE "^${PATH}/|^${DEPS}/" <<< "$CHANGED_FILES"; then
+            VERSION="$(cat "${PATH}/VERSION")"
+            ITEMS_TO_BUILD+=("{\"name\":\"${NAME}\",\"path\":\"${PATH}\",\"image_name\":\"${IMAGE_NAME}\",\"version\":\"${VERSION}\"}")
+          fi
+        done
+
+        printf 'items={"include":[%s]}\n' "$(IFS=,; echo "${ITEMS_TO_BUILD[*]}")" >> "$GITHUB_OUTPUT"
+
+  Build:
+    name: Build {{ matrix.name }}
+    needs: Inspect
+    runs-on: gha-runner-fetch-api
+    if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
+    strategy:
+      matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
+
+    steps:
+    - name: Fetch code
+      uses: actions/checkout@v6
+
+    - name: Prepare registry auth
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ${{ matrix.path }}/Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.version }}
+          ${{ env.REGISTRY }}/${{ matrix.image_name }}:latest

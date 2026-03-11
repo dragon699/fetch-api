@@ -1,0 +1,100 @@
+basePath: /
+definitions:
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  response.HealthResponse:
+    properties:
+      connector_name:
+        type: string
+      health_last_check:
+        type: string
+      health_next_check:
+        type: string
+      healthy:
+        type: boolean
+    type: object
+  response.ReadyResponse:
+    properties:
+      ready:
+        type: boolean
+    type: object
+  response.Torrent:
+    properties:
+      added_on:
+        type: integer
+      availability:
+        type: number
+      completion_on:
+        type: integer
+      content_path:
+        type: string
+      download_speed:
+        type: integer
+      downloaded:
+        type: integer
+    type: object
+  response.TorrentListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/response.Torrent'
+        type: array
+      total_items:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: A connector that downloads data from various sources to the host.
+  title: Downloader Connector
+paths:
+  /api/health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /api/ready:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ReadyResponse'
+      summary: Readiness check
+      tags:
+      - health
+  /torrents:
+    get:
+      description: Returns list of torrents in qBittorrent.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TorrentListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List torrents in qBittorrent
+      tags:
+      - torrents
+produces:
+- application/json
+swagger: "2.0"

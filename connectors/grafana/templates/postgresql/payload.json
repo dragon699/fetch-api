@@ -1,0 +1,17 @@
+{
+    "queries": [
+        {
+            "datasource": {
+                "type": "postgres",
+                "uid": null
+            },
+            "rawSql": null,
+            "format": "table",
+            "refId": "query",
+            "intervalMs": 60000,
+            "maxDataPoints": 43200
+        }
+    ],
+    "from": "now-5s",
+    "to": "now"
+}

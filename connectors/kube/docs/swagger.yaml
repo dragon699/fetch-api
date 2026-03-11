@@ -1,0 +1,295 @@
+basePath: /
+definitions:
+  response.Deployment:
+    properties:
+      conditions:
+        items:
+          $ref: '#/definitions/response.DeploymentCondition'
+        type: array
+      created_at:
+        type: string
+      name:
+        type: string
+      namespace:
+        type: string
+      replicas:
+        type: integer
+      status:
+        $ref: '#/definitions/response.DeploymentStatus'
+    type: object
+  response.DeploymentCondition:
+    properties:
+      last_transition_time:
+        type: string
+      name:
+        type: string
+      reason:
+        type: string
+      status:
+        type: string
+    type: object
+  response.DeploymentListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/response.Deployment'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  response.DeploymentStatus:
+    properties:
+      available_replicas:
+        type: integer
+      generation:
+        type: integer
+      ready_replicas:
+        type: integer
+      replicas:
+        type: integer
+      updated_replicas:
+        type: integer
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  response.HealthResponse:
+    properties:
+      connector_name:
+        type: string
+      health_last_check:
+        type: string
+      health_next_check:
+        type: string
+      healthy:
+        type: boolean
+    type: object
+  response.Namespace:
+    properties:
+      created_at:
+        type: string
+      name:
+        type: string
+    type: object
+  response.NamespaceListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/response.Namespace'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  response.Pod:
+    properties:
+      conditions:
+        items:
+          $ref: '#/definitions/response.PodCondition'
+        type: array
+      containers:
+        items:
+          $ref: '#/definitions/response.PodContainer'
+        type: array
+      created_at:
+        type: string
+      name:
+        type: string
+      namespace:
+        type: string
+      owners:
+        items:
+          $ref: '#/definitions/response.PodOwner'
+        type: array
+      started_at:
+        type: string
+      status:
+        type: string
+    type: object
+  response.PodCondition:
+    properties:
+      last_transition_time:
+        type: string
+      name:
+        type: string
+      reason:
+        type: string
+      status:
+        type: string
+    type: object
+  response.PodContainer:
+    properties:
+      image:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/response.PodContainerStatus'
+    type: object
+  response.PodContainerStatus:
+    properties:
+      last_termination_state:
+        $ref: '#/definitions/response.PodContainerStatusState'
+      ready:
+        type: boolean
+      restart_count:
+        type: integer
+      started:
+        type: boolean
+      state:
+        $ref: '#/definitions/response.PodContainerStatusState'
+    type: object
+  response.PodContainerStatusState:
+    properties:
+      exit_code:
+        type: integer
+      finished_at:
+        type: string
+      reason:
+        type: string
+      started_at:
+        type: string
+    type: object
+  response.PodListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/response.Pod'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  response.PodOwner:
+    properties:
+      kind:
+        type: string
+      name:
+        type: string
+    type: object
+  response.ReadyResponse:
+    properties:
+      ready:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: A connector that runs queries against Kubernetes cluster.
+  title: Kube Connector
+paths:
+  /api/health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.HealthResponse'
+      summary: Health check
+      tags:
+      - health
+  /api/ready:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ReadyResponse'
+      summary: Readiness check
+      tags:
+      - health
+  /namespaces:
+    get:
+      description: Returns list of Namespaces.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.NamespaceListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List namespaces
+      tags:
+      - namespaces
+  /pods:
+    get:
+      description: Returns list of pods.
+      parameters:
+      - description: Pods only from this namespace
+        in: query
+        name: namespace
+        type: string
+      - description: Pods only with container name matching this substring
+        in: query
+        name: container_name_contains
+        type: string
+      - description: Pods only with this status
+        in: query
+        name: status
+        type: string
+      - description: Pods only without this status
+        in: query
+        name: status_not
+        type: string
+      - description: Pods only which are jobs
+        in: query
+        name: jobs_only
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.PodListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List pods
+      tags:
+      - pods
+  /workloads/deployments:
+    get:
+      description: Returns list of Deployments.
+      parameters:
+      - description: Deployments only from this namespace
+        in: query
+        name: namespace
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.DeploymentListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List deployments
+      tags:
+      - workloads
+produces:
+- application/json
+swagger: "2.0"

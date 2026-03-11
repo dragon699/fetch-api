@@ -1,0 +1,456 @@
+{
+    "produces": [
+        "application/json"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "A connector that runs queries against Kubernetes cluster.",
+        "title": "Kube Connector",
+        "contact": {}
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/health": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/ready": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ReadyResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/namespaces": {
+            "get": {
+                "description": "Returns list of Namespaces.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "namespaces"
+                ],
+                "summary": "List namespaces",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.NamespaceListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/pods": {
+            "get": {
+                "description": "Returns list of pods.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pods"
+                ],
+                "summary": "List pods",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Pods only from this namespace",
+                        "name": "namespace",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pods only with container name matching this substring",
+                        "name": "container_name_contains",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pods only with this status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pods only without this status",
+                        "name": "status_not",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Pods only which are jobs",
+                        "name": "jobs_only",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.PodListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/workloads/deployments": {
+            "get": {
+                "description": "Returns list of Deployments.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workloads"
+                ],
+                "summary": "List deployments",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Deployments only from this namespace",
+                        "name": "namespace",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.DeploymentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "response.Deployment": {
+            "type": "object",
+            "properties": {
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DeploymentCondition"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "replicas": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/response.DeploymentStatus"
+                }
+            }
+        },
+        "response.DeploymentCondition": {
+            "type": "object",
+            "properties": {
+                "last_transition_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DeploymentListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.Deployment"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.DeploymentStatus": {
+            "type": "object",
+            "properties": {
+                "available_replicas": {
+                    "type": "integer"
+                },
+                "generation": {
+                    "type": "integer"
+                },
+                "ready_replicas": {
+                    "type": "integer"
+                },
+                "replicas": {
+                    "type": "integer"
+                },
+                "updated_replicas": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "connector_name": {
+                    "type": "string"
+                },
+                "health_last_check": {
+                    "type": "string"
+                },
+                "health_next_check": {
+                    "type": "string"
+                },
+                "healthy": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.Namespace": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.NamespaceListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.Namespace"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.Pod": {
+            "type": "object",
+            "properties": {
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.PodCondition"
+                    }
+                },
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.PodContainer"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "owners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.PodOwner"
+                    }
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PodCondition": {
+            "type": "object",
+            "properties": {
+                "last_transition_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PodContainer": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/response.PodContainerStatus"
+                }
+            }
+        },
+        "response.PodContainerStatus": {
+            "type": "object",
+            "properties": {
+                "last_termination_state": {
+                    "$ref": "#/definitions/response.PodContainerStatusState"
+                },
+                "ready": {
+                    "type": "boolean"
+                },
+                "restart_count": {
+                    "type": "integer"
+                },
+                "started": {
+                    "type": "boolean"
+                },
+                "state": {
+                    "$ref": "#/definitions/response.PodContainerStatusState"
+                }
+            }
+        },
+        "response.PodContainerStatusState": {
+            "type": "object",
+            "properties": {
+                "exit_code": {
+                    "type": "integer"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PodListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.Pod"
+                    }
+                },
+                "total_items": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.PodOwner": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ReadyResponse": {
+            "type": "object",
+            "properties": {
+                "ready": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

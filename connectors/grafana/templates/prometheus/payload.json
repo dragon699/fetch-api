@@ -1,0 +1,18 @@
+{
+    "queries": [
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": null
+            },
+            "expr": null,
+            "refId": "query",
+            "range": false,
+            "instant": true,
+            "intervalMs": 60000,
+            "maxDataPoints": 43200
+        }
+    ],
+    "from": "now-5s",
+    "to": "now"
+}

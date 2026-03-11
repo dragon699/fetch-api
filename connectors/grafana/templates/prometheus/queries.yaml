@@ -1,0 +1,10 @@
+- endpoint: argocd-apps
+  query:
+    id: argocd-apps
+    query: |
+      sum(argocd_app_info{}) by (name, namespace, health_status)
+- endpoint: longhorn-usage
+  query:
+    id: longhorn-usage
+    query: |
+      label_replace((avg by (pvc,pvc_namespace)(longhorn_volume_actual_size_bytes) / avg by (pvc,pvc_namespace)(longhorn_volume_capacity_bytes)) * 100, "metric", "pvc_usage_percentage", "", "") or label_replace(avg by (pvc,pvc_namespace)(longhorn_volume_actual_size_bytes) / 1024^3, "metric", "pvc_usage_gb", "", "") or label_replace(avg by (pvc,pvc_namespace)(longhorn_volume_capacity_bytes) / 1024^3, "metric", "pvc_capacity_gb", "", "")

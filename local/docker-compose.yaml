@@ -1,0 +1,165 @@
+name: fetch-api
+
+
+services:
+  fetch-api:
+    container_name: fetch-api
+    build:
+      context: ..
+      dockerfile: fetch_api/Dockerfile
+      tags:
+      - fetch-api/fetch-api:dev
+    pull_policy: build
+    restart: unless-stopped
+    env_file:
+    - ../../config/fetch-api/fetch_api/config.env
+    environment:
+    # Enabled connectors
+    - CONNECTORS=grafana,ml
+    # connector-grafana settings
+    - CONNECTOR_GRAFANA_HOST=connector-grafana.fetch-api.svc
+    - CONNECTOR_GRAFANA_PORT=9069
+    # connector-ml settings
+    - CONNECTOR_ML_HOST=connector-ml.fetch-api.svc
+    - CONNECTOR_ML_PORT=9069
+    # Redis settings
+    - REDIS_HOST=redis.fetch-api.svc
+    - REDIS_PORT=6379
+    - REDIS_DB=1
+    # Other settings
+    - OTEL_SERVICE_NAMESPACE=fetch-api-dev
+    - OTLP_ENDPOINT_GRPC=grpc.k8s.iaminyourpc.xyz:80
+    - LOG_FORMAT=logfmt
+    - LOG_LEVEL=debug
+    hostname: fetch-api.fetch-api.svc
+    networks:
+    - fetch-api
+    ports:
+    - 8069:8069
+    depends_on:
+      redis:
+        condition: service_healthy
+      connector-grafana:
+        condition: service_healthy
+      connector-ml:
+        condition: service_healthy
+
+  connector-grafana:
+    container_name: connector-grafana
+    build:
+      context: ..
+      dockerfile: connectors/grafana/Dockerfile
+      tags:
+      - fetch-api/connector-grafana:dev
+    pull_policy: build
+    restart: unless-stopped
+    env_file:
+    - ../../config/fetch-api/connectors/grafana/config.env
+    - env/connector-grafana.env
+    environment:
+    - OTEL_SERVICE_NAMESPACE=fetch-api-dev
+    - OTLP_ENDPOINT_GRPC=grpc.k8s.iaminyourpc.xyz:80
+    - LOG_FORMAT=logfmt
+    - LOG_LEVEL=debug
+    - LISTEN_PORT=9069
+    hostname: connector-grafana.fetch-api.svc
+    networks:
+    - fetch-api
+    ports:
+    - 9069:9069
+    volumes:
+    - ../../config/fetch-api/scripts/health-probe.py:/app/health-probe.py:ro
+    healthcheck:
+      test: ["CMD", "python", "/app/health-probe.py"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  connector-ml:
+    container_name: connector-ml
+    build:
+      context: ..
+      dockerfile: connectors/ml/Dockerfile
+      tags:
+      - fetch-api/connector-ml:dev
+    pull_policy: build
+    restart: unless-stopped
+    env_file:
+    - ../../config/fetch-api/connectors/ml/config.env
+    - env/connector-ml.env
+    environment:
+    - OTEL_SERVICE_NAMESPACE=fetch-api-dev
+    - OTLP_ENDPOINT_GRPC=grpc.k8s.iaminyourpc.xyz:80
+    - LOG_FORMAT=logfmt
+    - LOG_LEVEL=debug
+    - LISTEN_PORT=9069
+    hostname: connector-ml.fetch-api.svc
+    networks:
+    - fetch-api
+    ports:
+    - 9070:9069
+    volumes:
+    - ../../config/fetch-api/scripts/health-probe.py:/app/health-probe.py:ro
+    healthcheck:
+      test: ["CMD", "python", "/app/health-probe.py"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  connector-downloader:
+    container_name: connector-downloader
+    build:
+      context: ..
+      dockerfile: connectors/downloader/Dockerfile
+      tags:
+      - fetch-api/connector-downloader:dev
+    pull_policy: build
+    restart: unless-stopped
+    env_file:
+    - ../../config/fetch-api/connectors/downloader/config.env
+    - env/connector-downloader.env
+    environment:
+    - OTEL_SERVICE_NAMESPACE=fetch-api-dev
+    - OTLP_ENDPOINT_GRPC=grpc.k8s.iaminyourpc.xyz:80
+    - LOG_FORMAT=logfmt
+    - LOG_LEVEL=debug
+    - LISTEN_PORT=9069
+    hostname: connector-downloader.fetch-api.svc
+    networks:
+    - fetch-api
+    ports:
+    - 9071:9069
+    volumes:
+    - ../../config/fetch-api/scripts/health-probe.py:/app/health-probe.py:ro
+    healthcheck:
+      test: ["CMD", "python", "/app/health-probe.py"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  redis:
+    container_name: redis
+    image: redis:7.4-alpine
+    pull_policy: if_not_present
+    restart: unless-stopped
+    command: redis-server --save 30 1 --loglevel warning
+    hostname: redis.fetch-api.svc
+    networks:
+    - fetch-api
+    ports:
+    - 6379:6379
+    volumes:
+    - redis-cache:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -h localhost -p 6379 ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+
+volumes:
+  redis-cache:
+    driver: local
+
+networks:
+  fetch-api:

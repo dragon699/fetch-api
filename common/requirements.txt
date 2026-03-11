@@ -1,0 +1,16 @@
+pyyaml
+python-json-logger
+opentelemetry-sdk
+opentelemetry-api
+opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-propagator-b3
+opentelemetry-instrumentation
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-logging
+pydantic-settings
+apscheduler
+requests
+uvicorn
+fastapi
+jinja2
