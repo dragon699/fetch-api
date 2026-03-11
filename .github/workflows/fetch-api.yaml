@@ -42,12 +42,12 @@ jobs:
 
         BASE_SHA="${{ github.event.before }}"
         ITEMS=(
-          "fetch-api | fetch_api | common | dragon699/home-k8s/fetch-api/fetch-api"
-          "connector-downloader | connectors/downloader | common-go | dragon699/home-k8s/fetch-api/connectors/downloader"
-          "connector-grafana | connectors/grafana | common | dragon699/home-k8s/fetch-api/connectors/grafana"
-          "connector-kube | connectors/kube | common-go | dragon699/home-k8s/fetch-api/connectors/kube"
-          "connector-ml | connectors/ml | common | dragon699/home-k8s/fetch-api/connectors/ml"
-          "connector-slack | connectors/slack | common-go | dragon699/home-k8s/fetch-api/connectors/slack"
+          "fetch-api            | fetch_api             | common    | dragon699/fetch-api/fetch-api"
+          "connector-downloader | connectors/downloader | common-go | dragon699/fetch-api/connectors/downloader"
+          "connector-grafana    | connectors/grafana    | common    | dragon699/fetch-api/connectors/grafana"
+          "connector-kube       | connectors/kube       | common-go | dragon699/fetch-api/connectors/kube"
+          "connector-ml         | connectors/ml         | common    | dragon699/fetch-api/connectors/ml"
+          "connector-slack      | connectors/slack      | common-go | dragon699/fetch-api/connectors/slack"
         )
         ITEMS_TO_BUILD=()
 
@@ -61,13 +61,19 @@ jobs:
 
         CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "${{ github.sha }}")"
 
+        trim() {
+          local value="$1"
+          value="${value#"${value%%[![:space:]]*}"}"
+          value="${value%"${value##*[![:space:]]}"}"
+          printf '%s' "$value"
+        }
+
         for ITEM in "${ITEMS[@]}"; do
-          NAME="${ITEM%% | *}"
-          REST="${ITEM#* | }"
-          ITEM_PATH="${REST%% | *}"
-          REST="${REST#* | }"
-          DEPS="${REST%% | *}"
-          IMAGE_NAME="${REST#* | }"
+          IFS='|' read -r RAW_NAME RAW_PATH RAW_DEPS RAW_IMAGE_NAME <<< "$ITEM"
+          NAME="$(trim "$RAW_NAME")"
+          ITEM_PATH="$(trim "$RAW_PATH")"
+          DEPS="$(trim "$RAW_DEPS")"
+          IMAGE_NAME="$(trim "$RAW_IMAGE_NAME")"
 
           if grep -qE "^${ITEM_PATH}/|^${DEPS}/" <<< "$CHANGED_FILES"; then
             VERSION="$(cat "${ITEM_PATH}/VERSION")"
@@ -78,7 +84,7 @@ jobs:
         printf 'items={"include":[%s]}\n' "$(IFS=,; echo "${ITEMS_TO_BUILD[*]}")" >> "$GITHUB_OUTPUT"
 
   Build:
-    name: Build {{ matrix.name || 'fetch-api' }}
+    name: Build ${{ matrix.name || 'fetch-api' }}
     needs: Inspect
     runs-on: gha-runner-fetch-api
     if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}

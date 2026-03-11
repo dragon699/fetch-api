@@ -36,4 +36,3 @@ def render_template(content: str, vars: dict | None = None) -> str:
     )
 
     return template.render(vars)
-
