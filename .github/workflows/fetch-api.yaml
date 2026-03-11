@@ -83,8 +83,8 @@ jobs:
 
         printf 'items={"include":[%s]}\n' "$(IFS=,; echo "${ITEMS_TO_BUILD[*]}")" >> "$GITHUB_OUTPUT"
 
-  Build:
-    name: Build ${{ matrix.name || '' }}
+  Deploy:
+    name: Deploy ${{ matrix.name || ' ' }}
     needs: Inspect
     runs-on: gha-runner-fetch-api
     if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
@@ -113,25 +113,12 @@ jobs:
           ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.version }}
           ${{ env.REGISTRY }}/${{ matrix.image_name }}:latest
 
-
-
-  Deploy:
-    name: Deploy ${{ matrix.name }}
-    needs:
-    - Inspect
-    - Build
-    runs-on: gha-runner-fetch-api
-    if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
-    strategy:
-      matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
-      fail-fast: false
-
-    steps:
     - name: Fetch devops code
       uses: actions/checkout@v6
       with:
         repository: ${{ env.APP_REPO }}
         token: ${{ secrets.APP_REPO_TOKEN }}
+        path: devops
         fetch-depth: 0
         ref: main
 
