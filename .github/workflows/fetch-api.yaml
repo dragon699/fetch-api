@@ -111,3 +111,59 @@ jobs:
         tags: |
           ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.version }}
           ${{ env.REGISTRY }}/${{ matrix.image_name }}:latest
+
+
+
+  Deploy:
+    name: Deploy ${{ matrix.name }}
+    needs:
+    - Inspect
+    - Build
+    runs-on: gha-runner-fetch-api
+    if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
+    strategy:
+      matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
+
+    steps:
+    - name: Fetch devops code
+      uses: actions/checkout@v6
+      with:
+        repository: ${{ env.APP_REPO }}
+        token: ${{ secrets.APP_REPO_TOKEN }}
+        fetch-depth: 0
+        ref: main
+
+    - name: Fetch latest changes
+      run: |
+        git config user.name "ActionsBot"
+        git fetch origin main
+        git pull --rebase origin main
+
+    - name: Bump version
+      uses: mikefarah/yq@master
+      env:
+        APP_DEPLOYMENT_FILE: "manifests/apps/fetch-api/${{ matrix.path }}/${{ matrix.name }}.yaml"
+      with:
+        cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.version }}"' ${{ env.APP_DEPLOYMENT_FILE }}
+
+    - name: Sync changes
+      id: deployment_changes
+      uses: stefanzweifel/git-auto-commit-action@v7
+      with:
+        commit_message: >-
+          ${{
+            matrix.name == 'fetch-api' &&
+            format('fetch-api: Bump to v{0}', matrix.version) ||
+            format('fetch-api/{0}: Bump to v{1}', matrix.name, matrix.version)
+          }}
+
+    - name: Deploy
+      uses: clowdhaus/argo-cd-action/@main
+      if: steps.deployment_changes.outputs.changes_detected == 'true'
+      with:
+        download-url: ${{ env.ARGOCD_BIN_URL }}
+        command: app sync fetch-api
+        options: >-
+           --auth-token ${{ secrets.ARGOCD_TOKEN }}
+           --server ${{ secrets.ARGOCD_SERVER }}
+           --grpc-web
