@@ -91,6 +91,8 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.Inspect.outputs.items) }}
       fail-fast: false
+    env:
+      APP_DEPLOYMENT_FILE: "manifests/apps/fetch-api/${{ matrix.path }}/${{ matrix.name }}.yaml"
 
     steps:
     - name: Fetch code
@@ -123,6 +125,7 @@ jobs:
         ref: main
 
     - name: Fetch latest changes
+      working-directory: devops
       run: |
         git config user.name "ActionsBot"
         git fetch origin main
@@ -131,7 +134,7 @@ jobs:
     - name: Bump version
       uses: mikefarah/yq@master
       env:
-        APP_DEPLOYMENT_FILE: "manifests/apps/fetch-api/${{ matrix.path }}/${{ matrix.name }}.yaml"
+        APP_DEPLOYMENT_FILE: "devops/${{ env.APP_DEPLOYMENT_FILE }}"
       with:
         cmd: yq -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.version }}"' ${{ env.APP_DEPLOYMENT_FILE }}
 
@@ -139,12 +142,16 @@ jobs:
       id: deployment_changes
       uses: stefanzweifel/git-auto-commit-action@v7
       with:
+        repository: devops
         commit_message: >-
           ${{
             matrix.name == 'fetch-api' &&
             format('fetch-api: Bump to v{0}', matrix.version) ||
             format('fetch-api/{0}: Bump to v{1}', matrix.name, matrix.version)
           }}
+        commit_user_name: ActionsBot
+        file_pattern: ${{ env.APP_DEPLOYMENT_FILE }}
+        push_options: --force-with-lease
 
     - name: Deploy
       uses: clowdhaus/argo-cd-action/@main
