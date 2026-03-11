@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type Req struct {
 	Client *http.Client
 }

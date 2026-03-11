@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 func ToInt(val string) (int64, error) {
 	i, err := strconv.Atoi(val)
 
