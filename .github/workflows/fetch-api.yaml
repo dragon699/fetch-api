@@ -84,7 +84,7 @@ jobs:
         printf 'items={"include":[%s]}\n' "$(IFS=,; echo "${ITEMS_TO_BUILD[*]}")" >> "$GITHUB_OUTPUT"
 
   Build:
-    name: Build ${{ matrix.name || 'fetch-api' }}
+    name: Build ${{ matrix.name }}
     needs: Inspect
     runs-on: gha-runner-fetch-api
     if: ${{ needs.Inspect.outputs.items != '{"include":[]}' }}
