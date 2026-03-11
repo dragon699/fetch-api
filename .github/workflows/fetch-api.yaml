@@ -64,14 +64,14 @@ jobs:
         for ITEM in "${ITEMS[@]}"; do
           NAME="${ITEM%% | *}"
           REST="${ITEM#* | }"
-          PATH="${REST%% | *}"
+          ITEM_PATH="${REST%% | *}"
           REST="${REST#* | }"
           DEPS="${REST%% | *}"
           IMAGE_NAME="${REST#* | }"
 
-          if grep -qE "^${PATH}/|^${DEPS}/" <<< "$CHANGED_FILES"; then
-            VERSION="$(cat "${PATH}/VERSION")"
-            ITEMS_TO_BUILD+=("{\"name\":\"${NAME}\",\"path\":\"${PATH}\",\"image_name\":\"${IMAGE_NAME}\",\"version\":\"${VERSION}\"}")
+          if grep -qE "^${ITEM_PATH}/|^${DEPS}/" <<< "$CHANGED_FILES"; then
+            VERSION="$(cat "${ITEM_PATH}/VERSION")"
+            ITEMS_TO_BUILD+=("{\"name\":\"${NAME}\",\"path\":\"${ITEM_PATH}\",\"image_name\":\"${IMAGE_NAME}\",\"version\":\"${VERSION}\"}")
           fi
         done
 
