@@ -303,4 +303,3 @@ func (r *Req) POST(url string, headers map[string]string, params map[string]any,
 		Body:       parsedBody,
 	}, nil
 }
-
