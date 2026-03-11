@@ -183,10 +183,10 @@ jobs:
         download-url: ${{ env.ARGOCD_BIN_URL }}
         command: app sync fetch-api
         options: >-
-           --auth-token ${{ secrets.ARGOCD_TOKEN }}
-           --server ${{ secrets.ARGOCD_SERVER }}
-           --grpc-web
-           --retry-limit 15
-           --retry-backoff-duration 10s
-           --retry-backoff-max-duration 10s
-           --retry-backoff-factor 1
+          --auth-token ${{ secrets.ARGOCD_TOKEN }}
+          --server ${{ secrets.ARGOCD_SERVER }}
+          --grpc-web
+          --retry-limit 15
+          --retry-backoff-duration 10s
+          --retry-backoff-max-duration 10s
+          --retry-backoff-factor 1
