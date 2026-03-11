@@ -92,6 +92,7 @@ jobs:
       fail-fast: false
     env:
       APP_DEPLOYMENT_FILE: "manifests/apps/fetch-api/${{ matrix.path }}/${{ matrix.name }}.yaml"
+    timeout-minutes: 5
 
     steps:
     - name: Fetch code
