@@ -77,3 +77,21 @@ func ButtonInvestigate(value string, message slackapi.Message, user string) {
 		break
 	}
 }
+
+func ButtonValues(_ string, message slackapi.Message, _ string, triggerID string) {
+	var alert notifications.GrafanaAlertItem
+	alertJSON, err := json.Marshal(message.Metadata.EventPayload)
+
+	if err == nil {
+		_ = json.Unmarshal(alertJSON, &alert)
+	}
+
+	_, err = slack.Client.OpenViewFromTemplate(
+		triggerID,
+		"templates/notifications/grafana/alert_values.tpl",
+		alert,
+	)
+	if err != nil {
+		t.Log.Error("Failed to open modal view", "error", err)
+	}
+}

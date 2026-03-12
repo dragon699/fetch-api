@@ -187,7 +187,6 @@ func (instance *SlackClient) UpdateMsg(channelID string, ts string, blocks []map
 		},
 		options...,
 	)
-	// _, _, _, err := instance.Client.UpdateMessage(channelID, ts, opts...)
 	ch, newTs, _, err := instance.Client.UpdateMessage(channelID, ts, opts...)
 
 	if err != nil {
@@ -205,4 +204,55 @@ func (instance *SlackClient) UpdateMsg(channelID string, ts string, blocks []map
 		Blocks:      blocks,
 		Attachments: attachments,
 	}, nil
+}
+
+func (instance *SlackClient) OpenViewFromTemplate(channel string, templatePath string, templateVars any) (*ViewResponse, error) {
+	var view View
+
+	raw, err := utils.RenderTemplate(templatePath, templateVars, notificationTemplates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render view template %q: %w", templatePath, err)
+	}
+
+	if err := json.Unmarshal([]byte(raw), &view); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal view template %q: %w", templatePath, err)
+	}
+
+	viewRequest := slackapi.ModalViewRequest{
+		Type:   slackapi.ViewType(view.Type),
+		Blocks: slackapi.Blocks{BlockSet: toBlockSet(view.Blocks)},
+	}
+
+	if view.Title != nil {
+		viewRequest.Title = &slackapi.TextBlockObject{
+			Type: view.Title.Type,
+			Text: view.Title.Text,
+		}
+	}
+
+	if view.Close != nil {
+		viewRequest.Close = &slackapi.TextBlockObject{
+			Type: view.Close.Type,
+			Text: view.Close.Text,
+		}
+	}
+
+	if view.Submit != nil {
+		viewRequest.Submit = &slackapi.TextBlockObject{
+			Type: view.Submit.Type,
+			Text: view.Submit.Text,
+		}
+	}
+
+	v, err := instance.Client.OpenView(channel, viewRequest)
+	if err != nil {
+		return nil, config.NewUpstreamError(
+			fmt.Sprintf("views.open failed for %q", templatePath),
+			0,
+			nil,
+			err,
+		)
+	}
+
+	return v, nil
 }

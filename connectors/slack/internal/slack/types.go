@@ -6,6 +6,21 @@ import (
 	slackapi "github.com/slack-go/slack"
 )
 
+type TextObject struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type View struct {
+	Type   string           `json:"type"`
+	Title  *TextObject      `json:"title,omitempty"`
+	Blocks []map[string]any `json:"blocks,omitempty"`
+	Close  *TextObject      `json:"close,omitempty"`
+	Submit *TextObject      `json:"submit,omitempty"`
+}
+
+type ViewResponse = slackapi.ViewResponse
+
 type Message struct {
 	Channel     string           `json:"channel"`
 	Username    string           `json:"username,omitempty"`

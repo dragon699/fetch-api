@@ -112,6 +112,14 @@ func (instance *SlackSocketMode) handleInteraction(callback slackapi.Interaction
 				callback.Message,
 				callback.User.ID,
 			)
+
+		case "grafana_alert_button_values":
+			grafana_alert.ButtonValues(
+				callback.ActionCallback.BlockActions[0].Value,
+				callback.Message,
+				callback.User.ID,
+				callback.TriggerID,
+			)
 		}
 	}
 }
