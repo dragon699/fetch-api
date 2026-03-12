@@ -14,7 +14,7 @@ import (
 	slackapi "github.com/slack-go/slack"
 )
 
-//go:embed templates/notifications/*/*.tpl
+//go:embed templates/*/*/*.tpl
 var notificationTemplates embed.FS
 var Client *SlackClient
 
@@ -58,8 +58,8 @@ func (instance *SlackClient) Ping() error {
 func (instance *SlackClient) SendEphemeralMsg(channelID string, userID string, blocks []map[string]any, attachments []map[string]any, options ...slackapi.MsgOption) error {
 	opts := append(
 		[]slackapi.MsgOption{
-			slackapi.MsgOptionBlocks(toBlockSet(blocks)...),
-			slackapi.MsgOptionAttachments(toAttachmentSet(attachments)...),
+			slackapi.MsgOptionBlocks(asBlocks(blocks)...),
+			slackapi.MsgOptionAttachments(asAttachments(attachments)...),
 		},
 		options...,
 	)
@@ -81,8 +81,8 @@ func (instance *SlackClient) SendEphemeralMsg(channelID string, userID string, b
 func (instance *SlackClient) SendMsg(channelID string, blocks []map[string]any, attachments []map[string]any, options ...slackapi.MsgOption) (*MessageResponse, error) {
 	opts := append(
 		[]slackapi.MsgOption{
-			slackapi.MsgOptionBlocks(toBlockSet(blocks)...),
-			slackapi.MsgOptionAttachments(toAttachmentSet(attachments)...),
+			slackapi.MsgOptionBlocks(asBlocks(blocks)...),
+			slackapi.MsgOptionAttachments(asAttachments(attachments)...),
 		},
 		options...,
 	)
@@ -139,8 +139,8 @@ func (instance *SlackClient) SendMsgFromTemplate(channel string, app string, tem
 			EventType:    msgPayloadName,
 			EventPayload: msgPayload,
 		}),
-		slackapi.MsgOptionBlocks(toBlockSet(msg.Blocks)...),
-		slackapi.MsgOptionAttachments(toAttachmentSet(msg.Attachments)...),
+		slackapi.MsgOptionBlocks(asBlocks(msg.Blocks)...),
+		slackapi.MsgOptionAttachments(asAttachments(msg.Attachments)...),
 	}
 
 	opts = append(opts, options...)
@@ -182,8 +182,8 @@ func (instance *SlackClient) SendMsgFromTemplate(channel string, app string, tem
 func (instance *SlackClient) UpdateMsg(channelID string, ts string, blocks []map[string]any, attachments []map[string]any, options ...slackapi.MsgOption) (*MessageResponse, error) {
 	opts := append(
 		[]slackapi.MsgOption{
-			slackapi.MsgOptionBlocks(toBlockSet(blocks)...),
-			slackapi.MsgOptionAttachments(toAttachmentSet(attachments)...),
+			slackapi.MsgOptionBlocks(asBlocks(blocks)...),
+			slackapi.MsgOptionAttachments(asAttachments(attachments)...),
 		},
 		options...,
 	)
@@ -220,7 +220,7 @@ func (instance *SlackClient) OpenViewFromTemplate(channel string, templatePath s
 
 	viewRequest := slackapi.ModalViewRequest{
 		Type:   slackapi.ViewType(view.Type),
-		Blocks: slackapi.Blocks{BlockSet: toBlockSet(view.Blocks)},
+		Blocks: slackapi.Blocks{BlockSet: asBlocks(view.Blocks)},
 	}
 
 	if view.Title != nil {

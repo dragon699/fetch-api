@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"connector-slack/internal/config"
-	"connector-slack/internal/notifications"
 	"connector-slack/internal/slack"
 	t "connector-slack/internal/telemetry"
 
@@ -13,7 +12,7 @@ import (
 )
 
 func ButtonInvestigate(value string, message slackapi.Message, user string) {
-	var alert notifications.GrafanaAlertItem
+	alert := parseAlert(message)
 	askMsg := []map[string]any{
 		{
 			"type": "section",
@@ -24,37 +23,31 @@ func ButtonInvestigate(value string, message slackapi.Message, user string) {
 		},
 	}
 
-	alertJSON, err := json.Marshal(message.Metadata.EventPayload)
-
-	if err == nil {
-		_ = json.Unmarshal(alertJSON, &alert)
-	}
-
-	_, err = slack.Client.SendMsg(
+	_, err := slack.Client.SendMsg(
 		config.Config.SlackGrafanaAlertsChannelID,
 		askMsg,
 		nil,
 		slackapi.MsgOptionText(fmt.Sprintf("%s > Investigation requested from Stitch", alert.Labels["alertname"]), false),
 		slackapi.MsgOptionTS(message.Timestamp),
 	)
-
 	if err != nil {
 		t.Log.Error("Failed to send message", "error", err)
 	}
 
 	for i := len(message.Blocks.BlockSet) - 1; i >= 0; i-- {
 		actionsBlock, ok := message.Blocks.BlockSet[i].(*slackapi.ActionBlock)
-
 		if !ok || len(actionsBlock.Elements.ElementSet) == 0 {
 			continue
 		}
 
 		filtered := actionsBlock.Elements.ElementSet[:0]
+
 		for _, element := range actionsBlock.Elements.ElementSet {
 			button, ok := element.(*slackapi.ButtonBlockElement)
 			if ok && button.ActionID == "grafana_alert_button_investigate" {
 				continue
 			}
+
 			filtered = append(filtered, element)
 		}
 
@@ -78,20 +71,10 @@ func ButtonInvestigate(value string, message slackapi.Message, user string) {
 	}
 }
 
-func ButtonValues(_ string, message slackapi.Message, _ string, triggerID string) {
-	var alert notifications.GrafanaAlertItem
-	alertJSON, err := json.Marshal(message.Metadata.EventPayload)
+func ButtonValues(message slackapi.Message, triggerID string) {
+	alert := parseAlert(message)
 
-	if err == nil {
-		_ = json.Unmarshal(alertJSON, &alert)
-	}
-
-	_, err = slack.Client.OpenViewFromTemplate(
-		triggerID,
-		"templates/notifications/grafana/alert_values.tpl",
-		alert,
-	)
-	if err != nil {
-		t.Log.Error("Failed to open modal view", "error", err)
+	if _, err := slack.Client.OpenViewFromTemplate(triggerID, "templates/notifications/grafana/alert_values.tpl", alert); err != nil {
+		t.Log.Error("slack: Failed to open modal for the user", "error", err)
 	}
 }

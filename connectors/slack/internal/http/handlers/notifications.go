@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 
 	"connector-slack/internal/config"
@@ -15,29 +14,15 @@ import (
 
 func SendNotification(ctx *fiber.Ctx) error {
 	var reqPayload request.NotificationPayload
-
-	if err := ctx.BodyParser(&reqPayload); err != nil {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "Invalid request payload",
-			},
-		)
+	if err := parseBody(ctx, &reqPayload); err != nil {
+		return err
 	}
 
 	if reqPayload.ChannelID == "" {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "channel_id is required",
-			},
-		)
+		return badRequestError(ctx, "channel_id: missing required field")
 	}
-
 	if len(reqPayload.Blocks) == 0 && len(reqPayload.Attachments) == 0 {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "At least one block or attachment is required in blocks or attachments",
-			},
-		)
+		return badRequestError(ctx, "Either `blocks` or `attachments` field with at least 1 item is required")
 	}
 
 	options := []slackapi.MsgOption{
@@ -47,23 +32,8 @@ func SendNotification(ctx *fiber.Ctx) error {
 	}
 
 	result, err := slack.Client.SendMsg(reqPayload.ChannelID, reqPayload.Blocks, reqPayload.Attachments, options...)
-
 	if err != nil {
-		var clientErr *config.ClientError
-		if errors.As(err, &clientErr) {
-			return ctx.Status(502).JSON(
-				response.ErrorResponse{
-					Error:            err.Error(),
-					UpstreamResponse: clientErr.UpstreamResponse(),
-				},
-			)
-		}
-
-		return ctx.Status(500).JSON(
-			response.ErrorResponse{
-				Error: err.Error(),
-			},
-		)
+		return serviceError(ctx, err)
 	}
 
 	return ctx.JSON(
@@ -77,43 +47,20 @@ func SendNotification(ctx *fiber.Ctx) error {
 
 func SendGrafanaAlertNotification(ctx *fiber.Ctx) error {
 	var reqPayload request.GrafanaAlertNotificationPayload
-
-	if err := ctx.BodyParser(&reqPayload); err != nil {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "Invalid request payload",
-			},
-		)
+	if err := parseBody(ctx, &reqPayload); err != nil {
+		return err
 	}
 
 	if len(reqPayload.Alerts) == 0 {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "Got 0 alerts in payload, at least 1 is required",
-			},
-		)
+		return badRequestError(ctx, "`alerts` field is required with at least 1 item")
 	}
 
 	for _, alert := range reqPayload.Alerts {
 		templatePath := fmt.Sprintf("%s/notifications/grafana/%s.tpl", config.Config.TemplatesBasePath, "alert")
+
 		result, err := slack.Client.SendMsgFromTemplate(config.Config.SlackGrafanaAlertsChannelID, "grafana", templatePath, alert)
-
 		if err != nil {
-			var clientErr *config.ClientError
-			if errors.As(err, &clientErr) {
-				return ctx.Status(502).JSON(
-					response.ErrorResponse{
-						Error:            err.Error(),
-						UpstreamResponse: clientErr.UpstreamResponse(),
-					},
-				)
-			}
-
-			return ctx.Status(500).JSON(
-				response.ErrorResponse{
-					Error: err.Error(),
-				},
-			)
+			return serviceError(ctx, err)
 		}
 
 		if alert.ImageURL != "" {
@@ -135,25 +82,8 @@ func SendGrafanaAlertNotification(ctx *fiber.Ctx) error {
 					"alt_text":  "Dashboard preview",
 				},
 			}
-
-			_, err := slack.Client.SendMsg(result.Channel, blocks, nil, options...)
-
-			if err != nil {
-				var clientErr *config.ClientError
-				if errors.As(err, &clientErr) {
-					return ctx.Status(502).JSON(
-						response.ErrorResponse{
-							Error:            err.Error(),
-							UpstreamResponse: clientErr.UpstreamResponse(),
-						},
-					)
-				}
-
-				return ctx.Status(500).JSON(
-					response.ErrorResponse{
-						Error: err.Error(),
-					},
-				)
+			if _, err := slack.Client.SendMsg(result.Channel, blocks, nil, options...); err != nil {
+				return serviceError(ctx, err)
 			}
 		}
 	}
@@ -167,34 +97,15 @@ func SendGrafanaAlertNotification(ctx *fiber.Ctx) error {
 
 func SendTorrentNotification(ctx *fiber.Ctx) error {
 	var reqPayload request.TorrentNotificationPayload
+	templatePath := fmt.Sprintf("%s/notifications/connector-downloader/%s.tpl", config.Config.TemplatesBasePath, "torrent")
 
-	if err := ctx.BodyParser(&reqPayload); err != nil {
-		return ctx.Status(400).JSON(
-			response.ErrorResponse{
-				Error: "Invalid request payload",
-			},
-		)
+	if err := parseBody(ctx, &reqPayload); err != nil {
+		return err
 	}
 
-	templatePath := fmt.Sprintf("%s/notifications/connector-downloader/%s.tpl", config.Config.TemplatesBasePath, "torrent")
 	result, err := slack.Client.SendMsgFromTemplate(config.Config.SlackConnectorDownloaderChannelID, "connector-downloader", templatePath, reqPayload)
-
 	if err != nil {
-		var clientErr *config.ClientError
-		if errors.As(err, &clientErr) {
-			return ctx.Status(502).JSON(
-				response.ErrorResponse{
-					Error:            err.Error(),
-					UpstreamResponse: clientErr.UpstreamResponse(),
-				},
-			)
-		}
-
-		return ctx.Status(500).JSON(
-			response.ErrorResponse{
-				Error: err.Error(),
-			},
-		)
+		return serviceError(ctx, err)
 	}
 
 	return ctx.JSON(

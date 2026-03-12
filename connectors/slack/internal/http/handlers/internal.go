@@ -14,7 +14,6 @@ func Health(ctx *fiber.Ctx) error {
 	if config.Config.HealthLastCheck != nil {
 		lastCheck = *config.Config.HealthLastCheck
 	}
-
 	if config.Config.HealthNextCheck != nil {
 		nextCheck = *config.Config.HealthNextCheck
 	}
