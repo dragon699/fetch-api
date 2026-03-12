@@ -18,6 +18,10 @@
 {{- end -}}
 
 {{- $dashboardURL := or .PanelURL .DashboardURL -}}
+{{- $silenceURL := .SilenceURL -}}
+
+{{- $isFiring := eq $status "Firing" -}}
+{{- $hasDashboardURL := ne $dashboardURL "" -}}
 
 
 
@@ -47,20 +51,23 @@
 					"type": "mrkdwn",
 					"text": {{ json (printf "*Status*\n%s" $status) }}
 				}
+				{{- $fieldCount := 1 -}}
 				{{- range $key, $value := .Labels }}
-				{{- if and (ne $key "alertname") (not (hasPrefix $key "grafana_")) }},
+				{{- if and (lt $fieldCount 10) (ne $key "alertname") (not (hasPrefix $key "grafana_")) }},
 				{
 					"type": "mrkdwn",
 					"text": {{ json (printf "*%s*\n%s" (capitalize $key) $value) }}
 				}
+				{{- $fieldCount = add $fieldCount 1 -}}
 				{{- end }}
 				{{- end }}
 				{{- range $key, $value := .Annotations }}
-				{{- if and (ne $key "summary") (ne $key "description") }},
+				{{- if and (lt $fieldCount 10) (ne $key "summary") (ne $key "description") }},
 				{
 					"type": "mrkdwn",
 					"text": {{ json (printf "*%s*\n%s" (capitalize $key) $value) }}
 				}
+				{{- $fieldCount = add $fieldCount 1 -}}
 				{{- end }}
 				{{- end }}
 			]
@@ -86,17 +93,24 @@
 		{
 			"type": "actions",
 			"elements": [
-				{{- if eq $status "Firing" -}}
+				{{- if $isFiring -}}
 				{
 					"type": "button",
 					"text": {
 						"type": "plain_text",
 						"text": "☉ Investigate"
 					},
-					"action_id": "grafana_alert_button_investigate",
-					"value": "pending"
+					"action_id": "grafana_alert_button_investigate"
 				},
-				{{- end -}}
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "◴ Silence"
+					},
+					"url": {{ json $silenceURL }},
+					"action_id": "grafana_alert_button_silence"
+				},
 				{
 					"type": "button",
 					"text": {
@@ -105,7 +119,9 @@
 					},
 					"action_id": "grafana_alert_button_values"
 				}
-				{{- if $dashboardURL -}},
+				{{- end -}}
+				{{- if and $isFiring $hasDashboardURL }},{{ end }}
+				{{- if $hasDashboardURL }}
 				{
 					"type": "button",
 					"text": {

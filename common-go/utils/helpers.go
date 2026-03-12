@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
 func ToInt(val string) (int64, error) {
 	i, err := strconv.Atoi(val)
 
@@ -369,6 +368,7 @@ func RenderTemplate(templatePath string, templateVars any, embeddedFiles embed.F
 func RenderTemplateContent(templateName string, templateContent string, vars any) (string, error) {
 	tpl, err := template.New(templateName).Funcs(template.FuncMap{
 		"json":         templateJSON,
+		"add":          func(a, b int) int { return a + b },
 		"beautifyTime": TimeFromGrafana,
 		"hasPrefix":    strings.HasPrefix,
 		"contains":     strings.Contains,
