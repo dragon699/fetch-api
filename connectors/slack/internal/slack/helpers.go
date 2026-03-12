@@ -10,6 +10,13 @@ type rawBlock struct {
 	data map[string]any
 }
 
+func (b rawBlock) ID() string {
+	if id, ok := b.data["block_id"].(string); ok {
+		return id
+	}
+	return ""
+}
+
 func (b rawBlock) BlockType() slackapi.MessageBlockType {
 	if t, ok := b.data["type"].(string); ok {
 		return slackapi.MessageBlockType(t)
@@ -17,11 +24,8 @@ func (b rawBlock) BlockType() slackapi.MessageBlockType {
 	return ""
 }
 
-func (b rawBlock) ID() string {
-	if id, ok := b.data["block_id"].(string); ok {
-		return id
-	}
-	return ""
+func (b rawBlock) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.data)
 }
 
 func asBlocks(blocks []map[string]any) []slackapi.Block {
