@@ -9,7 +9,7 @@ import (
 	"connector-downloader/internal/http/dto/response"
 	"connector-downloader/internal/mapper"
 	"connector-downloader/internal/qbittorrent"
-	"connector-downloader/internal/tpb"
+	"connector-downloader/internal/torrent_indexer"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -267,7 +267,7 @@ func SearchTorrents(ctx *fiber.Ctx) error {
 	}
 
 	// 200 = All video media
-	torrents, err := tpb.Client.SearchTorrents(200, searchParams.Query)
+	torrents, err := torrent_indexer.Client.SearchTorrents(200, searchParams.Query)
 
 	if err != nil {
 		var clientErr *config.ClientError
@@ -287,7 +287,7 @@ func SearchTorrents(ctx *fiber.Ctx) error {
 		)
 	}
 
-	result := mapper.TorrentsFromTPB(torrents)
+	result := mapper.TorrentsFromTorrentIndexer(torrents)
 
 	return ctx.JSON(response.BaseResponse[response.Torrent]{
 		TotalItems: len(result),

@@ -39,19 +39,12 @@ func (instance *ActionsRunner) run() {
 				shouldNotify := (action.Category == "slack") && (action.Name == "notify") && (action.Status == "pending")
 
 				if shouldNotify {
-					err := run.SlackNotify(
-						"initial",
-						torrent,
-					)
-
-					if err != nil {
+					if err := run.SlackNotify("initial", torrent); err != nil {
 						t.Log.Error("Failed to send Slack notification for downloading torrent", "error", err.Error())
 					}
-
 					break
 				}
 			}
-
 			continue
 		}
 
@@ -59,15 +52,9 @@ func (instance *ActionsRunner) run() {
 			shouldNotify := (action.Category == "slack") && (action.Name == "notify") && (action.Status == "initial")
 
 			if shouldNotify {
-				err = run.SlackNotify(
-					"completed",
-					torrent,
-				)
-
-				if err != nil {
+				if err := run.SlackNotify("completed", torrent); err != nil {
 					t.Log.Error("Failed to send Slack notification for completed torrent", "error", err.Error())
 				}
-
 				break
 			}
 		}

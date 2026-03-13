@@ -9,7 +9,7 @@ import (
 	"common/utils"
 	"connector-downloader/internal/http/dto/response"
 	"connector-downloader/internal/qbittorrent"
-	"connector-downloader/internal/tpb"
+	"connector-downloader/internal/torrent_indexer"
 )
 
 func TorrentsFromQBittorrent(torrents []qbittorrent.Torrent) []response.Torrent {
@@ -161,7 +161,7 @@ func TorrentsFromQBittorrent(torrents []qbittorrent.Torrent) []response.Torrent 
 	return result
 }
 
-func TorrentsFromTPB(torrents []tpb.Torrent) []response.Torrent {
+func TorrentsFromTorrentIndexer(torrents []torrent_indexer.Torrent) []response.Torrent {
 	result := make([]response.Torrent, 0, len(torrents))
 
 	for _, torrentSrc := range torrents {

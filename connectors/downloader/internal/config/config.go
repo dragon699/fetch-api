@@ -17,14 +17,15 @@ type Settings struct {
 	ListenPort int    `json:"listen_port"                   env:"LISTEN_PORT"`
 	ListenUrl  string `json:"listen_url"`
 
-	QBittorrentUrl                   string `json:"qbittorrent_url"                     env:"QBITTORRENT_URL"`
-	QBittorrentPublicUrl             string `json:"qbittorrent_public_url"              env:"QBITTORRENT_PUBLIC_URL"`
-	QBittorrentDefaultSavePath       string `json:"qbittorrent_default_save_path"       env:"QBITTORRENT_DEFAULT_SAVE_PATH"`
-	TPBAPIUrl                        string `json:"tpb_api_url"                         env:"TPB_API_URL"`
-	JellyfinUrl                      string `json:"jellyfin_url"                        env:"JELLYFIN_URL"`
-	JellyfinAPIKey                   string `json:"jellyfin_api_key"                    env:"JELLYFIN_API_KEY"`
-	JellyfinSubtitlesDefaultLanguage string `json:"jellyfin_subtitles_default_language" env:"JELLYFIN_SUBTITLES_DEFAULT_LANGUAGE"`
-	SlackNotificationsWebhookUrl     string `json:"slack_notifications_webhook_url"     env:"SLACK_NOTIFICATIONS_WEBHOOK_URL"`
+	QBittorrentUrl                      string `json:"qbittorrent_url"                        env:"QBITTORRENT_URL"`
+	QBittorrentPublicUrl                string `json:"qbittorrent_public_url"                 env:"QBITTORRENT_PUBLIC_URL"`
+	QBittorrentDefaultSavePath          string `json:"qbittorrent_default_save_path"          env:"QBITTORRENT_DEFAULT_SAVE_PATH"`
+	TorrentIndexerUrl                   string `json:"torrent_indexer_url"                    env:"TORRENT_INDEXER_URL"`
+	JellyfinUrl                         string `json:"jellyfin_url"                           env:"JELLYFIN_URL"`
+	JellyfinAPIKey                      string `json:"jellyfin_api_key"                       env:"JELLYFIN_API_KEY"`
+	JellyfinSubtitlesDefaultLanguage    string `json:"jellyfin_subtitles_default_language"    env:"JELLYFIN_SUBTITLES_DEFAULT_LANGUAGE"`
+	ConnectorSlackUrl                   string `json:"connector_slack_url"                    env:"CONNECTOR_SLACK_URL"`
+	ConnectorSlackNotificationsEndpoint string `json:"connector_slack_notifications_endpoint" env:"CONNECTOR_SLACK_NOTIFICATIONS_ENDPOINT"`
 
 	OtelServiceName      string `json:"otel_service_name"             env:"OTEL_SERVICE_NAME"`
 	OtelServiceNamespace string `json:"otel_service_namespace"        env:"OTEL_SERVICE_NAMESPACE"`
@@ -52,12 +53,14 @@ var defaultSettings = Settings{
 	ListenHost: "0.0.0.0",
 	ListenPort: 8080,
 
-	QBittorrentUrl:                   "http://qbittorrent-web.qbittorrent.svc:80",
-	QBittorrentPublicUrl:             "https://qb.k8s.iaminyourpc.xyz",
-	QBittorrentDefaultSavePath:       "/data/Windows/Movies",
-	TPBAPIUrl:                        "https://apibay.org",
-	JellyfinUrl:                      "https://watch.k8s.iaminyourpc.xyz",
-	JellyfinSubtitlesDefaultLanguage: "english",
+	QBittorrentUrl:                      "http://qbittorrent-web.qbittorrent.svc:80",
+	QBittorrentPublicUrl:                "https://qb.k8s.iaminyourpc.xyz",
+	QBittorrentDefaultSavePath:          "/data/Windows/Movies",
+	TorrentIndexerUrl:                   "https://apibay.org",
+	JellyfinUrl:                         "https://watch.k8s.iaminyourpc.xyz",
+	JellyfinSubtitlesDefaultLanguage:    "english",
+	ConnectorSlackUrl:                   "http://connector-slack.fetch-api.svc:9069",
+	ConnectorSlackNotificationsEndpoint: "/notifications/connector-downloader/torrent",
 
 	OtelServiceName:      "connector-downloader",
 	OtelServiceNamespace: "fetch-api",

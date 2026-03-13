@@ -11,9 +11,8 @@ import (
 	"connector-downloader/internal/http/routes"
 	"connector-downloader/internal/jellyfin"
 	"connector-downloader/internal/qbittorrent"
-	"connector-downloader/internal/slack"
 	"connector-downloader/internal/swagger"
-	"connector-downloader/internal/tpb"
+	"connector-downloader/internal/torrent_indexer"
 
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
@@ -33,14 +32,9 @@ func LoadQBittorrentClient() {
 	qbittorrent.Client.Init()
 }
 
-func LoadTPBClient() {
-	tpb.Client = &tpb.TPBClient{}
-	tpb.Client.Init()
-}
-
-func LoadSlackClient() {
-	slack.Client = &slack.SlackClient{}
-	slack.Client.Init()
+func LoadTorrentIndexerClient() {
+	torrent_indexer.Client = &torrent_indexer.TorrentIndexerClient{}
+	torrent_indexer.Client.Init()
 }
 
 func LoadJellyfinClient() {

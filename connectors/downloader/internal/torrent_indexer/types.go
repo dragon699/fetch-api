@@ -1,4 +1,4 @@
-package tpb
+package torrent_indexer
 
 type Torrent struct {
 	ID       string `json:"id"`

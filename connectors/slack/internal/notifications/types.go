@@ -15,23 +15,25 @@ type GrafanaAlert struct {
 }
 
 type GrafanaAlertItem struct {
-	Status        string            `json:"status,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty"`
-	Annotations   map[string]string `json:"annotations,omitempty"`
-	StartsAt      string            `json:"startsAt,omitempty"`
-	EndsAt        string            `json:"endsAt,omitempty"`
-	Values        map[string]any    `json:"values,omitempty"`
-	GeneratorURL  string            `json:"generatorURL,omitempty"`
-	Fingerprint   string            `json:"fingerprint,omitempty"`
-	SilenceURL    string            `json:"silenceURL,omitempty"`
-	DashboardURL  string            `json:"dashboardURL,omitempty"`
-	PanelURL      string            `json:"panelURL,omitempty"`
-	ImageURL      string            `json:"imageURL,omitempty"`
+	Status       string            `json:"status,omitempty"`
+	Labels       map[string]string `json:"labels,omitempty"`
+	Annotations  map[string]string `json:"annotations,omitempty"`
+	StartsAt     string            `json:"startsAt,omitempty"`
+	EndsAt       string            `json:"endsAt,omitempty"`
+	Values       map[string]any    `json:"values,omitempty"`
+	GeneratorURL string            `json:"generatorURL,omitempty"`
+	Fingerprint  string            `json:"fingerprint,omitempty"`
+	SilenceURL   string            `json:"silenceURL,omitempty"`
+	DashboardURL string            `json:"dashboardURL,omitempty"`
+	PanelURL     string            `json:"panelURL,omitempty"`
+	ImageURL     string            `json:"imageURL,omitempty"`
 }
 
 type Torrent struct {
 	Name           string `json:"name,omitempty"`
+	Hash           string `json:"hash,omitempty"`
 	Category       string `json:"category,omitempty"`
 	JellyfinURL    string `json:"jellyfin_url,omitempty"`
 	QBittorrentURL string `json:"qbittorrent_url,omitempty"`
+	Stage          string `json:"stage,omitempty"`
 }

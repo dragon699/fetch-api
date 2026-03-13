@@ -1,4 +1,4 @@
-package tpb
+package torrent_indexer
 
 import (
 	"encoding/json"
@@ -10,23 +10,23 @@ import (
 	"connector-downloader/internal/config"
 )
 
-var Client *TPBClient
+var Client *TorrentIndexerClient
 
-type TPBClient struct {
+type TorrentIndexerClient struct {
 	APIBaseURL        string
 	APIDefaultHeaders map[string]string
 	Client            *http.Client
 }
 
-func (instance *TPBClient) Init() {
-	instance.APIBaseURL = config.Config.TPBAPIUrl
+func (instance *TorrentIndexerClient) Init() {
+	instance.APIBaseURL = config.Config.TorrentIndexerUrl
 	instance.APIDefaultHeaders = map[string]string{}
 	instance.Client = &http.Client{
 		Timeout: 10 * time.Second,
 	}
 }
 
-func (instance *TPBClient) SearchTorrents(category int64, query string) ([]Torrent, error) {
+func (instance *TorrentIndexerClient) SearchTorrents(category int64, query string) ([]Torrent, error) {
 	req := utils.Req{Client: instance.Client}
 
 	resp, err := req.GET(
@@ -45,7 +45,7 @@ func (instance *TPBClient) SearchTorrents(category int64, query string) ([]Torre
 	torrents, ok := resp.Body.([]map[string]any)
 
 	if !ok {
-		return nil, config.NewUpstreamError("Invalid TPB search response", resp.StatusCode, nil, nil)
+		return nil, config.NewUpstreamError("Invalid TorrentIndexer search response", resp.StatusCode, nil, nil)
 	}
 
 	rawTorrents, err := json.Marshal(torrents)

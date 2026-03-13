@@ -33,8 +33,7 @@ func Run() error {
 	app.Use(t.TracingMiddleware())
 
 	LoadQBittorrentClient()
-	LoadTPBClient()
-	LoadSlackClient()
+	LoadTorrentIndexerClient()
 	LoadJellyfinClient()
 	LoadHealthChecker()
 	LoadRoutes(app)

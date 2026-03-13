@@ -56,7 +56,7 @@ func SendGrafanaAlertNotification(ctx *fiber.Ctx) error {
 	}
 
 	for _, alert := range reqPayload.Alerts {
-		templatePath := fmt.Sprintf("%s/notifications/grafana/%s.tpl", config.Config.TemplatesBasePath, "alert")
+		templatePath := fmt.Sprintf("%s/notifications/grafana/alert.tpl", config.Config.TemplatesBasePath)
 
 		result, err := slack.Client.SendMsgFromTemplate(config.Config.SlackGrafanaAlertsChannelID, "grafana", templatePath, alert)
 		if err != nil {
@@ -97,11 +97,11 @@ func SendGrafanaAlertNotification(ctx *fiber.Ctx) error {
 
 func SendTorrentNotification(ctx *fiber.Ctx) error {
 	var reqPayload request.TorrentNotificationPayload
-	templatePath := fmt.Sprintf("%s/notifications/connector-downloader/%s.tpl", config.Config.TemplatesBasePath, "torrent")
-
 	if err := parseBody(ctx, &reqPayload); err != nil {
 		return err
 	}
+
+	templatePath := fmt.Sprintf("%s/notifications/connector-downloader/torrent.tpl", config.Config.TemplatesBasePath)
 
 	result, err := slack.Client.SendMsgFromTemplate(config.Config.SlackConnectorDownloaderChannelID, "connector-downloader", templatePath, reqPayload)
 	if err != nil {

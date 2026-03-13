@@ -14,7 +14,6 @@ import (
 	"connector-downloader/internal/http/dto/response"
 	"connector-downloader/internal/jellyfin"
 	"connector-downloader/internal/qbittorrent"
-	"connector-downloader/internal/slack"
 	t "connector-downloader/internal/telemetry"
 )
 
@@ -37,24 +36,25 @@ func TorrentPostDownload(torrent response.Torrent) ([]qbittorrent.TorrentContent
 	for _, file := range torrentContent {
 		if file.Progress < 1 {
 			os.Remove(path.Join(torrent.SavePath, file.Name))
-		} else {
-			if !slices.Contains(allowedExtensions, path.Ext(file.Name)) {
-				continue
-			}
-
-			fileName := path.Base(file.Name)
-			fileExt := path.Ext(fileName)
-
-			torrentContentFiles = append(torrentContentFiles, file)
-			torrentContentNewFileNames = append(
-				torrentContentNewFileNames,
-				fmt.Sprintf(
-					"%s%s",
-					utils.BeautifyMovieName(strings.TrimSuffix(fileName, fileExt)),
-					fileExt,
-				),
-			)
+			continue
 		}
+
+		if !slices.Contains(allowedExtensions, path.Ext(file.Name)) {
+			continue
+		}
+
+		fileName := path.Base(file.Name)
+		fileExt := path.Ext(fileName)
+
+		torrentContentFiles = append(torrentContentFiles, file)
+		torrentContentNewFileNames = append(
+			torrentContentNewFileNames,
+			fmt.Sprintf(
+				"%s%s",
+				utils.BeautifyMovieName(strings.TrimSuffix(fileName, fileExt)),
+				fileExt,
+			),
+		)
 	}
 
 	return torrentContentFiles, torrentContentNewFileNames, nil
@@ -62,6 +62,7 @@ func TorrentPostDownload(torrent response.Torrent) ([]qbittorrent.TorrentContent
 
 func SlackNotify(stage string, torrent response.Torrent) error {
 	var lastTag, newTag string
+	req := utils.Req{}
 
 	switch stage {
 	case "initial":
@@ -72,38 +73,36 @@ func SlackNotify(stage string, torrent response.Torrent) error {
 		newTag = "slack:notify=completed"
 	}
 
-	templateVars := TorrentSlackNotificationVars{
-		TorrentName:    torrent.Name,
-		Category:       torrent.Category,
-		QBittorrentURL: config.Config.QBittorrentPublicUrl,
-		JellyfinURL:    config.Config.JellyfinUrl,
-	}
+	if _, err := req.POST(
+		fmt.Sprintf("%s%s", config.Config.ConnectorSlackUrl, config.Config.ConnectorSlackNotificationsEndpoint),
+		map[string]string{
+			"Content-Type": "application/json",
+		},
+		nil,
+		map[string]any{
+			"name":            torrent.Name,
+			"hash":            torrent.Hash,
+			"category":        torrent.Category,
+			"qbittorrent_url": config.Config.QBittorrentPublicUrl,
+			"jellyfin_url":    config.Config.JellyfinUrl,
+			"stage":           stage,
+		},
+	); err != nil {
+		t.Log.Error("Failed to send Slack notification for a torrent!", "error", err.Error())
 
-	err := slack.Client.SendMessage(
-		fmt.Sprintf("torrents_%s", stage),
-		templateVars,
-	)
+		if tagsErr := SwitchTorrentTags(torrent.Hash, []string{lastTag}, []string{"slack:notify=failed"}); tagsErr != nil {
+			t.Log.Error(fmt.Sprintf("Failed to update tags for slack:notify action status for torrent %s", torrent.Hash), "error", tagsErr.Error(), "torrent_hash", torrent.Hash)
 
-	if err != nil {
-		t.Log.Error("Failed to send slack notification for a torrent!", "error", err.Error())
-
-		tagErr := SwitchTorrentTags(torrent.Hash, []string{lastTag}, []string{"slack:notify=failed"})
-
-		if tagErr != nil {
-			t.Log.Error(fmt.Sprintf("Failed to update tags for slack:notify action status for torrent %s", torrent.Hash), "error", tagErr.Error(), "torrent_hash", torrent.Hash)
-
-			return fmt.Errorf("Failed to send slack notification and update tags for torrent %s: notify error: %w; tag error: %v", torrent.Hash, err, tagErr)
+			return fmt.Errorf("Failed to send Slack notification and update tags for torrent %s: notify error: %w; tag error: %v", torrent.Hash, err, tagsErr)
 		}
 
-		return fmt.Errorf("Failed to send slack notification for a torrent: %w", err)
+		return fmt.Errorf("Failed to send Slack notification for a torrent: %w", err)
 	}
 
-	err = SwitchTorrentTags(torrent.Hash, []string{lastTag}, []string{newTag})
+	if tagsErr := SwitchTorrentTags(torrent.Hash, []string{lastTag}, []string{newTag}); tagsErr != nil {
+		t.Log.Error(fmt.Sprintf("Failed to update tags for slack:notify action status for torrent %s", torrent.Hash), "error", tagsErr.Error(), "torrent_hash", torrent.Hash)
 
-	if err != nil {
-		t.Log.Error(fmt.Sprintf("Failed to update tags for slack:notify action status for torrent %s", torrent.Hash), "error", err.Error(), "torrent_hash", torrent.Hash)
-
-		return fmt.Errorf("Failed to update slack:notify tags for torrent %s after sending notification: %w", torrent.Hash, err)
+		return fmt.Errorf("Failed to update slack:notify tags for torrent %s after sending notification: %w", torrent.Hash, tagsErr)
 	}
 
 	return nil
@@ -193,7 +192,7 @@ func JellyfinFindSubs(torrent response.Torrent, torrentContentNewFileNames []str
 
 	for _, item := range jellyfinItems {
 		fileName := filepath.Base(item.Path)
-		
+
 		if !slices.Contains(torrentContentNewFileNames, fileName) {
 			continue
 		}
