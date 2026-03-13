@@ -10,7 +10,6 @@
 
 
 {
-	"text": {{ json $notification }},
 	"attachments": [
 		{
 			"color": {{ json $color }},
