@@ -73,7 +73,7 @@ func SlackNotify(stage string, torrent response.Torrent) error {
 		newTag = "slack:notify=completed"
 	}
 
-	if _, err := req.POST(
+	if result, err := req.POST(
 		fmt.Sprintf("%s%s", config.Config.ConnectorSlackUrl, config.Config.ConnectorSlackNotificationsEndpoint),
 		map[string]string{
 			"Content-Type": "application/json",
@@ -89,6 +89,7 @@ func SlackNotify(stage string, torrent response.Torrent) error {
 		},
 	); err != nil {
 		t.Log.Error("Failed to send Slack notification for a torrent!", "error", err.Error())
+		fmt.Println(result.Body)
 
 		if tagsErr := SwitchTorrentTags(torrent.Hash, []string{lastTag}, []string{"slack:notify=failed"}); tagsErr != nil {
 			t.Log.Error(fmt.Sprintf("Failed to update tags for slack:notify action status for torrent %s", torrent.Hash), "error", tagsErr.Error(), "torrent_hash", torrent.Hash)
