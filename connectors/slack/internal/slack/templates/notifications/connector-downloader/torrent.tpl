@@ -20,7 +20,7 @@
 					"type": "section",
 					"text": {
 						"type": "mrkdwn",
-						"text": "*{{ .TorrentName }}*\n{{ $titleText }}"
+						"text": "*{{ .Name }}*\n{{ $titleText }}"
 					}
 				},
 				{
