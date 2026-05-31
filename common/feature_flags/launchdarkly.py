@@ -4,7 +4,7 @@ from typing import Any
 
 import ldclient
 from ldclient import Config, Context
-from ldotel.tracing import Hook
+from ldotel.tracing import Hook, HookOptions
 
 
 class LaunchDarklyClient:
@@ -19,7 +19,7 @@ class LaunchDarklyClient:
 
         config = Config(
             sdk_key=sdk_key,
-            hooks=[Hook()]
+            hooks=[Hook(HookOptions(include_value=True))]
         )
         ldclient.set_config(config=config)
         self.client = ldclient.get()
@@ -57,4 +57,3 @@ class LaunchDarklyClient:
     def shutdown(self) -> None:
         if self.client is not None:
             self.client.close()
-
