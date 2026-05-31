@@ -7,6 +7,7 @@ from common.utils.helpers import DataUtils
 from fetch_api.settings import connectors, settings
 from fetch_api.src.telemetry.logging import log
 from fetch_api.src.client import ConnectorClient
+from fetch_api.src.feature_flags import is_ai_summary_enabled
 
 
 
@@ -79,7 +80,20 @@ class APIProcessor:
 
         if client.connector_name != 'ml':
             if body.ai and len(results['items']) > 0:
-                if 'ml' in connectors:
+                ai_summary_enabled = is_ai_summary_enabled(
+                    route=request.scope['path'],
+                    connector=client.connector_name
+                )
+                if span is not None:
+                    span.set_attribute('feature.enable_ai_summary', ai_summary_enabled)
+
+                if not ai_summary_enabled:
+                    log.info('Skipping AI summary because feature flag is disabled', extra=common_log_attributes)
+                    results['ai_summary'] = {
+                        'disabled': True,
+                        'reason': 'Feature flag enable_ai_summary is disabled'
+                    }
+                elif 'ml' in connectors:
                     ml_client = ConnectorClient(
                         connectors['ml'].name,
                         cache=True,

@@ -33,6 +33,8 @@ class FetchAPISettings(BaseSettings):
     connector_health_retry_interval_seconds: int = 5
 
     ai_summary_requests_timeout: int = 4
+    launchdarkly_sdk_key: str | None = None
+    launchdarkly_flag_enable_ai_summary: str = 'enable_ai_summary'
 
 
     def model_post_init(self, __context: Any) -> None:

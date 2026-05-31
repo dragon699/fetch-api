@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     default_model: str
     default_keep_alive_minutes: int = 15
     default_temperature: float = 0.5
+    launchdarkly_sdk_key: str | None = None
+    launchdarkly_flag_enable_ai_summary: str = 'enable_ai_summary'
 
 
     def model_post_init(self, __context: Any) -> None:
