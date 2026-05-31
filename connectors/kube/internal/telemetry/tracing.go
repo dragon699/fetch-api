@@ -21,7 +21,7 @@ func init() {
 		ServiceName:      config.Config.OtelServiceName,
 		ServiceNamespace: config.Config.OtelServiceNamespace,
 		ServiceVersion:   config.Config.OtelServiceVersion,
-		OtlpEndpointGrpc: config.Config.OtlpEndpointGrpc,
+		OtlpEndpointHTTP: config.Config.OtlpEndpointHTTP,
 	})
 
 	if err != nil {

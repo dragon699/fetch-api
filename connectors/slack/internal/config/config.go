@@ -39,7 +39,7 @@ type Settings struct {
 	OtelServiceName      string `json:"otel_service_name"             env:"OTEL_SERVICE_NAME"`
 	OtelServiceNamespace string `json:"otel_service_namespace"        env:"OTEL_SERVICE_NAMESPACE"`
 	OtelServiceVersion   string `json:"otel_service_version"          env:"OTEL_SERVICE_VERSION"`
-	OtlpEndpointGrpc     string `json:"otlp_endpoint_grpc"            env:"OTLP_ENDPOINT_GRPC"`
+	OtlpEndpointHTTP     string `json:"otlp_endpoint_http"            env:"OTLP_ENDPOINT_HTTP"`
 
 	LogLevel  string `json:"log_level"                     env:"LOG_LEVEL"`
 	LogFormat string `json:"log_format"                    env:"LOG_FORMAT"`
@@ -74,7 +74,7 @@ var defaultSettings = Settings{
 	OtelServiceName:      "connector-slack",
 	OtelServiceNamespace: "fetch-api",
 	OtelServiceVersion:   "",
-	OtlpEndpointGrpc:     "grpc.k8s.iaminyourpc.xyz:80",
+	OtlpEndpointHTTP:     "http://grafana-alloy.monitoring.svc:4318",
 
 	LogLevel:  "info",
 	LogFormat: "logfmt",

@@ -2,15 +2,19 @@ package telemetry
 
 import (
 	"context"
+	"errors"
+	"net/url"
+	"strings"
+	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 
@@ -18,33 +22,38 @@ type TracerConfig struct {
 	ServiceName      string
 	ServiceNamespace string
 	ServiceVersion   string
-	OtlpEndpointGrpc string
+	OtlpEndpointHTTP string
 }
 
 type TracerProvider struct {
 	Tracer         trace.Tracer
 	tracerProvider *sdktrace.TracerProvider
+	meterProvider  *metric.MeterProvider
 }
 
 
 func NewTracer(config TracerConfig) (*TracerProvider, error) {
 	ctx := context.Background()
+	endpoint := normalizeOTLPEndpoint(config.OtlpEndpointHTTP)
 
-	// Create OTLP exporter
-	conn, err := grpc.NewClient(
-		config.OtlpEndpointGrpc,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	traceExporter, err := otlptracehttp.New(
+		ctx,
+		otlptracehttp.WithEndpoint(endpoint),
+		otlptracehttp.WithInsecure(),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	exporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	metricExporter, err := otlpmetrichttp.New(
+		ctx,
+		otlpmetrichttp.WithEndpoint(endpoint),
+		otlpmetrichttp.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create resource with service information
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(config.ServiceName),
@@ -56,25 +65,57 @@ func NewTracer(config TracerConfig) (*TracerProvider, error) {
 		return nil, err
 	}
 
-	// Create tracer provider
 	tracerProvider := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
+		sdktrace.WithBatcher(traceExporter),
 		sdktrace.WithResource(res),
+	)
+	meterProvider := metric.NewMeterProvider(
+		metric.WithResource(res),
+		metric.WithReader(metric.NewPeriodicReader(metricExporter, metric.WithInterval(10*time.Second))),
 	)
 
 	otel.SetTracerProvider(tracerProvider)
+	otel.SetMeterProvider(meterProvider)
 	tracer := otel.Tracer(config.ServiceName)
 
 	return &TracerProvider{
 		Tracer:         tracer,
 		tracerProvider: tracerProvider,
+		meterProvider:  meterProvider,
 	}, nil
 }
 
 
 func (tp *TracerProvider) Shutdown(ctx context.Context) error {
-	if tp.tracerProvider != nil {
-		return tp.tracerProvider.Shutdown(ctx)
+	var err error
+
+	if tp.meterProvider != nil {
+		err = errors.Join(err, tp.meterProvider.Shutdown(ctx))
 	}
-	return nil
+
+	if tp.tracerProvider != nil {
+		err = errors.Join(err, tp.tracerProvider.Shutdown(ctx))
+	}
+
+	return err
+}
+
+func normalizeOTLPEndpoint(endpoint string) string {
+	trimmed := strings.TrimSpace(endpoint)
+	if trimmed == "" {
+		return trimmed
+	}
+
+	if strings.Contains(trimmed, "://") {
+		parsed, err := url.Parse(trimmed)
+		if err == nil && parsed.Host != "" {
+			return parsed.Host
+		}
+	}
+
+	if strings.Contains(trimmed, "/") {
+		return strings.Split(strings.Trim(trimmed, "/"), "/")[0]
+	}
+
+	return trimmed
 }

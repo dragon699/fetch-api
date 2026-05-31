@@ -2,7 +2,7 @@ pyyaml
 python-json-logger
 opentelemetry-sdk
 opentelemetry-api
-opentelemetry-exporter-otlp-proto-grpc
+opentelemetry-exporter-otlp-proto-http
 opentelemetry-propagator-b3
 opentelemetry-instrumentation
 opentelemetry-instrumentation-fastapi

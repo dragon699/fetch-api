@@ -7,10 +7,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"connector-downloader/internal/config"
 	t "connector-downloader/internal/telemetry"
@@ -59,6 +61,14 @@ func Run() error {
 
 	if err := app.Shutdown(); err != nil {
 		t.Log.Error("Failed to shutdown server", "error", err.Error())
+		return err
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := t.ShutdownTracer(shutdownCtx); err != nil {
+		t.Log.Error("Failed to shutdown telemetry", "error", err.Error())
 		return err
 	}
 

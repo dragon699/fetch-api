@@ -1,5 +1,5 @@
 from typing import Sequence
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import (Status, StatusCode)
 from opentelemetry.sdk.trace.export import ReadableSpan, SpanExportResult
 

@@ -8,7 +8,7 @@ instrumentor = Tracer(
         'service_name': settings.otel_service_name,
         'service_namespace': settings.otel_service_namespace,
         'service_version': settings.otel_service_version,
-        'otlp_endpoint_grpc': settings.otlp_endpoint_grpc
+        'otlp_endpoint_http': settings.otlp_endpoint_http
     },
     logger=logger
 )

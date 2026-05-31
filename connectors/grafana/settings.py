@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     otel_service_name: str = 'connector-grafana'
     otel_service_namespace: str = 'fetch-api'
     otel_service_version: str = SysUtils.get_app_version(f'{os.path.dirname(__file__)}/VERSION')
-    otlp_endpoint_grpc: str = 'grafana-alloy.monitoring.svc:4317'
+    otlp_endpoint_http: str = 'http://grafana-alloy.monitoring.svc:4318'
 
     log_level: str = 'info'
     log_format: str = 'json'
