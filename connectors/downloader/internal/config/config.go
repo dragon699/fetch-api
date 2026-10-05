@@ -58,7 +58,7 @@ var defaultSettings = Settings{
 
 	QBittorrentUrl:                      "http://qbittorrent-web.qbittorrent.svc:80",
 	QBittorrentPublicUrl:                "https://qb.k8s.iaminyourpc.xyz",
-	QBittorrentDefaultSavePath:          "/data/Windows/Movies",
+	QBittorrentDefaultSavePath:          "/data",
 	TorrentIndexerUrl:                   "https://apibay.org",
 	JellyfinUrl:                         "https://watch.k8s.iaminyourpc.xyz",
 	JellyfinSubtitlesDefaultLanguage:    "english",
