@@ -1,11 +1,11 @@
-import json
 from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from common.telemetry.src.tracing.wrappers import traced
-from fetch_api.settings import connectors, settings
+from fetch_api.settings import connectors
 from fetch_api.src.telemetry.logging import log
 from fetch_api.src.client import ConnectorClient
+from fetch_api.src.ai_summary import summary_refresher
 
 
 
@@ -80,60 +80,22 @@ class APIProcessor:
                     'error': str(err)
                 })
 
-        if client.connector_name != 'ml':
-            if body.ai and len(results['items']) > 0:
-                if 'ml' in connectors:
-                    ml_client = ConnectorClient(
-                        connectors['ml'].name,
-                        cache=True,
-                        requests_timeout=settings.ai_summary_requests_timeout
+        if client.connector_name != 'ml' and body.ai and results['items']:
+            if 'ml' in connectors:
+                try:
+                    summary = summary_refresher.get_and_refresh(
+                        endpoint=request.scope['path'], upstreams=upstreams,
+                        items=results['items'], prompt=ai_prompt,
+                        template=ai_instructions_template
                     )
-
-                    upstream_ml_endpoint = 'ask'
-                    commong_ml_log_attributes = {
-                        **common_log_attributes,
-                        'upstream_ml_endpoint': upstream_ml_endpoint
-                    }
-
-                    try:
-                        response = ml_client.post(
-                            endpoint=upstream_ml_endpoint,
-                            data={
-                                'instructions_template': ai_instructions_template,
-                                'prompt': '{}\n\n\nJSON_DATA: {}'.format(
-                                    ai_prompt,
-                                    json.dumps(
-                                        results['items'],
-                                        separators=(',', ':')
-                                    )
-                                )
-                            }
-                        )
-
-                        if response.status_code != 200:
-                            raise RuntimeError(f'ML provider returned HTTP {response.status_code}')
-
-                        response_body = response.json()
-                        results['ai_summary'] = response_body['items'][0]
-
-                        if response_body.get('cached') and response_body['cached'] is True:
-                            commong_ml_log_attributes['cache_status'] = 'hit'
-                            results['ai_summary']['cached'] = True
-                            results['ai_summary']['cached_at'] = response_body['cached_at']
-
-                        else:
-                            commong_ml_log_attributes['cache_status'] = 'miss'
-
-                        log.debug('Fetched AI summary for upstream responses', extra=commong_ml_log_attributes)
-
-                    except Exception as err:
-                        log.warning('AI summary fetch failed', extra={
-                            **commong_ml_log_attributes,
-                            'error': str(err)
-                        })
-
-                else:
-                    log.warning('Skipping AI processing, as ML connector is not enabled', extra=common_log_attributes)
+                    if summary is not None:
+                        results['ai_summary'] = summary
+                except Exception as err:
+                    log.warning('AI summary scheduling failed', extra={
+                        **common_log_attributes, 'error_type': type(err).__name__
+                    })
+            else:
+                log.warning('Skipping AI processing, as ML connector is not enabled', extra=common_log_attributes)
 
         results['total_items'] = len(results['items'])
 

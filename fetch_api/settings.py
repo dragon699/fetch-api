@@ -1,6 +1,7 @@
 import os
 from typing import Any
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from common.utils.helpers import SysUtils
 from fetch_api.src.telemetry.logging import logger
 from fetch_api.src.loaders import SettingsLoader
@@ -33,6 +34,10 @@ class FetchAPISettings(BaseSettings):
     connector_health_retry_interval_seconds: int = 5
 
     ai_summary_requests_timeout: int = 100
+    ai_summary_background_timeout_seconds: float = Field(default=100, gt=0)
+    ai_summary_refresh_interval_seconds: int = Field(default=300, gt=0)
+    ai_summary_background_workers: int = Field(default=2, gt=0)
+    ai_summary_cache_timeout_seconds: float = Field(default=0.5, gt=0)
 
 
     def model_post_init(self, __context: Any) -> None:

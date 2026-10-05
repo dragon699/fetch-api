@@ -9,24 +9,27 @@ from fetch_api.settings import (settings, connectors)
 from fetch_api.src.telemetry.tracing import instrumentor
 from fetch_api.src.health_checker import HealthChecker
 from fetch_api.src.loaders import RoutesLoader
+from fetch_api.src.ai_summary import summary_refresher
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     scheduler.start()
+    summary_refresher.start()
 
-    for connector_name in connectors:
-        health_checkers[connector_name] = HealthChecker(
-            scheduler,
-            connectors[connector_name]
-        )
-        health_checkers[connector_name].create_connector_schedule()
+    try:
+        for connector_name in connectors:
+            health_checkers[connector_name] = HealthChecker(
+                scheduler,
+                connectors[connector_name]
+            )
+            health_checkers[connector_name].create_connector_schedule()
 
-    RoutesLoader.load(app, settings)
-
-    yield
-
-    scheduler.shutdown()
+        RoutesLoader.load(app, settings)
+        yield
+    finally:
+        summary_refresher.close()
+        scheduler.shutdown()
 
 
 scheduler = BackgroundScheduler()

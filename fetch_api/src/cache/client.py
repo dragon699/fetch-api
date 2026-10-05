@@ -1,4 +1,6 @@
 import json, redis
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 from typing import Any
 from common.telemetry.src.tracing.wrappers import traced
 from common.telemetry.src.tracing.helpers import reword
@@ -6,12 +8,15 @@ from common.telemetry.src.tracing.helpers import reword
 
 
 class RedisClient:
-    def __init__(self, host: str, port: int, db: int, password: str | None = None) -> None:
+    def __init__(self, host: str, port: int, db: int, password: str | None = None, socket_timeout: float | None = None) -> None:
         self.client = redis.Redis(
             host=host,
             port=port,
             db=db,
             password=password,
+            socket_timeout=socket_timeout,
+            socket_connect_timeout=socket_timeout,
+            **({'retry': Retry(NoBackoff(), 0)} if socket_timeout is not None else {}),
             decode_responses=True
         )
 
