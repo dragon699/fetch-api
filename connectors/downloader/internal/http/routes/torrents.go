@@ -60,11 +60,11 @@ func AddTorrent(router fiber.Router) {
 // @Tags         torrents
 // @Accept       json
 // @Produce      json
-// @Param        request  body      request.AddTorrentTagPayload  true  "Add torrent tag payload"
+// @Param        request  body      request.AddTorrentTagsPayload  true  "Add torrent tags payload"
 // @Success      200      {object}  response.SuccessResponse
 // @Failure      400      {object}  response.ErrorResponse
 // @Failure      500      {object}  response.ErrorResponse
-// @Router       /torrents/tag [post]
+// @Router       /torrents/tags [post]
 func AddTorrentTags(router fiber.Router) {
 	api := router.Group(torrentsRouterName)
 	api.Post("/tags", handlers.AddTorrentTags)
@@ -76,11 +76,11 @@ func AddTorrentTags(router fiber.Router) {
 // @Tags         torrents
 // @Accept       json
 // @Produce      json
-// @Param        request  body      request.DeleteTorrentTagPayload  true  "Delete torrent tag payload"
+// @Param        request  body      request.DeleteTorrentTagsPayload  true  "Delete torrent tags payload"
 // @Success      200      {object}  response.SuccessResponse
 // @Failure      400      {object}  response.ErrorResponse
 // @Failure      500      {object}  response.ErrorResponse
-// @Router       /torrents/tag [delete]
+// @Router       /torrents/tags [delete]
 func DeleteTorrentTags(router fiber.Router) {
 	api := router.Group(torrentsRouterName)
 	api.Delete("/tags", handlers.DeleteTorrentTags)

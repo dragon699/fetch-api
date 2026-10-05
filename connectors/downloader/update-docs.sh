@@ -1,8 +1,9 @@
 #!/bin/bash
 
 
-export DIR="./"
-export GENERAL_INFO="./internal/app/bootstrap.go"
+# swag only resolves types from the listed package dirs; "./" has no Go files
+export DIR="./internal/app,./internal/http/routes,./internal/http/dto/response,./internal/http/dto/request"
+export GENERAL_INFO="bootstrap.go"
 export OUTPUT_DIR="./docs"
 
 

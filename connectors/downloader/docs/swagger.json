@@ -48,6 +48,50 @@
                 }
             }
         },
+        "/mcp": {
+            "post": {
+                "description": "Model Context Protocol endpoint exposing the search_torrents, download, list_downloads and get_download tools.\nStateless JSON-RPC over POST with plain JSON responses. Only registered when MCP_AUTH_TOKEN is set.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "mcp"
+                ],
+                "summary": "MCP server (Streamable HTTP)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer \u003cMCP_AUTH_TOKEN\u003e",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "JSON-RPC 2.0 request, e.g. initialize, tools/list or tools/call",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "JSON-RPC 2.0 response",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid bearer token"
+                    }
+                }
+            }
+        },
         "/torrents": {
             "get": {
                 "description": "Returns list of torrents in qBittorrent.",
@@ -78,15 +122,252 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Adds a torrent to qBittorrent using a torrent or magnet url.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "torrents"
+                ],
+                "summary": "Add a torrent to qBittorrent",
+                "parameters": [
+                    {
+                        "description": "Torrent payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AddTorrentPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/torrents/search": {
+            "get": {
+                "description": "Searches for torrents in torrent providers.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "torrents"
+                ],
+                "summary": "Search for torrents in torrent providers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.TorrentListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/torrents/tags": {
+            "post": {
+                "description": "Adds a tag to a torrent in qBittorrent.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "torrents"
+                ],
+                "summary": "Add a tag to a torrent in qBittorrent",
+                "parameters": [
+                    {
+                        "description": "Add torrent tags payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AddTorrentTagsPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a tag from a torrent in qBittorrent.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "torrents"
+                ],
+                "summary": "Delete a tag from a torrent in qBittorrent",
+                "parameters": [
+                    {
+                        "description": "Delete torrent tags payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteTorrentTagsPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "request.AddTorrentPayload": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "find_subs": {
+                    "type": "boolean"
+                },
+                "manage": {
+                    "type": "boolean"
+                },
+                "notify": {
+                    "type": "boolean"
+                },
+                "save_path": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.AddTorrentTagsPayload": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "request.DeleteTorrentTagsPayload": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "response.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
                     "type": "string"
+                },
+                "upstream_response": {
+                    "type": "object",
+                    "additionalProperties": {}
                 }
             }
         },
@@ -115,26 +396,106 @@
                 }
             }
         },
+        "response.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "response.Torrent": {
             "type": "object",
             "properties": {
-                "added_on": {
-                    "type": "integer"
-                },
-                "availability": {
-                    "type": "number"
-                },
-                "completion_on": {
-                    "type": "integer"
-                },
-                "content_path": {
+                "category": {
                     "type": "string"
                 },
-                "download_speed": {
+                "date_added": {
+                    "type": "string"
+                },
+                "date_completed": {
+                    "type": "string"
+                },
+                "date_last_activity": {
+                    "type": "string"
+                },
+                "eta_minutes": {
                     "type": "integer"
                 },
-                "downloaded": {
+                "files_availability_percentage": {
+                    "type": "number"
+                },
+                "files_count": {
                     "type": "integer"
+                },
+                "files_path": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "imdb": {
+                    "type": "string"
+                },
+                "leechers": {
+                    "type": "integer"
+                },
+                "magnet_uri": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/response.TorrentMeta"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "progress_percentage": {
+                    "type": "number"
+                },
+                "save_path": {
+                    "type": "string"
+                },
+                "seeders": {
+                    "type": "integer"
+                },
+                "size_downloaded_mb": {
+                    "type": "integer"
+                },
+                "size_left_mb": {
+                    "type": "integer"
+                },
+                "size_mb": {
+                    "type": "integer"
+                },
+                "size_total_gb": {
+                    "type": "number"
+                },
+                "size_total_mb": {
+                    "type": "integer"
+                },
+                "size_uploaded_mb": {
+                    "type": "integer"
+                },
+                "speed_download_mbps": {
+                    "type": "number"
+                },
+                "speed_upload_mbps": {
+                    "type": "number"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -149,6 +510,37 @@
                 },
                 "total_items": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.TorrentMeta": {
+            "type": "object",
+            "properties": {
+                "managed_by": {
+                    "type": "string"
+                },
+                "scheduled_actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.TorrentMetaScheduledAction"
+                    }
+                }
+            }
+        },
+        "response.TorrentMetaScheduledAction": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         }

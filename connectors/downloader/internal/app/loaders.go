@@ -78,6 +78,9 @@ func LoadRoutes(app fiber.Router) {
 	routes.AddTorrentTags(app)
 	routes.DeleteTorrentTags(app)
 
+	// /mcp route
+	routes.MCP(app)
+
 	// Swagger routes
 	swaggerHandler := LoadSwagger()
 	app.Get("/swagger/*", swaggerHandler)

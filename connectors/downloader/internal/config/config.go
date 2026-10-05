@@ -27,6 +27,9 @@ type Settings struct {
 	ConnectorSlackUrl                   string `json:"connector_slack_url"                    env:"CONNECTOR_SLACK_URL"`
 	ConnectorSlackNotificationsEndpoint string `json:"connector_slack_notifications_endpoint" env:"CONNECTOR_SLACK_NOTIFICATIONS_ENDPOINT"`
 
+	// MCP is disabled unless set; never serialized
+	McpAuthToken string `json:"-" env:"MCP_AUTH_TOKEN"`
+
 	OtelServiceName      string `json:"otel_service_name"             env:"OTEL_SERVICE_NAME"`
 	OtelServiceNamespace string `json:"otel_service_namespace"        env:"OTEL_SERVICE_NAMESPACE"`
 	OtelServiceVersion   string `json:"otel_service_version"          env:"OTEL_SERVICE_VERSION"`
@@ -61,6 +64,8 @@ var defaultSettings = Settings{
 	JellyfinSubtitlesDefaultLanguage:    "english",
 	ConnectorSlackUrl:                   "http://connector-slack.fetch-api.svc:9069",
 	ConnectorSlackNotificationsEndpoint: "/notifications/connector-downloader/torrent",
+
+	McpAuthToken: "",
 
 	OtelServiceName:      "connector-downloader",
 	OtelServiceNamespace: "fetch-api",

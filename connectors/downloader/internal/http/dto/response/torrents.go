@@ -47,3 +47,9 @@ type TorrentMetaScheduledAction struct {
 	Status      string `json:"status,omitempty"`
 	Category    string `json:"category,omitempty"`
 }
+
+// TorrentListResponse documents BaseResponse[Torrent] for Swagger (swag can't resolve the generic from routes)
+type TorrentListResponse struct {
+	TotalItems int       `json:"total_items"`
+	Items      []Torrent `json:"items"`
+}

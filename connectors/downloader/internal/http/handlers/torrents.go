@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"errors"
-	"slices"
 
 	"connector-downloader/internal/config"
 	"connector-downloader/internal/http/dto/request"
 	"connector-downloader/internal/http/dto/response"
 	"connector-downloader/internal/mapper"
 	"connector-downloader/internal/qbittorrent"
+	"connector-downloader/internal/service"
 	"connector-downloader/internal/torrent_indexer"
 
 	"github.com/gofiber/fiber/v2"
@@ -66,60 +66,35 @@ func AddTorrent(ctx *fiber.Ctx) error {
 	findSubs := false
 	notify := false
 
-	if reqPayload.Category == "" {
-		reqPayload.Category = "jellyfin"
-	}
-
-	if (reqPayload.Category == "jellyfin") && !(slices.Contains(reqPayload.Tags, "jellyfin:rename=pending")) {
-		reqPayload.Tags = append(reqPayload.Tags, "jellyfin:rename=pending")
-	}
-
-	if len(reqPayload.Tags) == 0 {
-		reqPayload.Tags = []string{}
-	}
-
-	if reqPayload.SavePath == "" {
-		reqPayload.SavePath = config.Config.QBittorrentDefaultSavePath
-	}
-
 	if reqPayload.Manage != nil {
 		manage = *reqPayload.Manage
-	}
-
-	if (manage) && !(slices.Contains(reqPayload.Tags, "fetch-api")) {
-		reqPayload.Tags = append(reqPayload.Tags, "fetch-api")
 	}
 
 	if reqPayload.FindSubs != nil {
 		findSubs = *reqPayload.FindSubs
 	}
 
-	if findSubs {
-		if reqPayload.Category != "jellyfin" {
-			return ctx.Status(400).JSON(
-				response.ErrorResponse{
-					Error: "find_subs can only be true when `category` is jellyfin",
-				},
-			)
-		}
-
-		reqPayload.Tags = append(reqPayload.Tags, "jellyfin:find_subs=pending")
-	}
-
 	if reqPayload.Notify != nil {
 		notify = *reqPayload.Notify
 	}
 
-	if (notify) && !(slices.Contains(reqPayload.Tags, "slack:notify=pending")) {
-		reqPayload.Tags = append(reqPayload.Tags, "slack:notify=pending")
-	}
+	err := service.AddTorrent(service.AddTorrentOptions{
+		URL:      reqPayload.URL,
+		Category: reqPayload.Category,
+		Tags:     reqPayload.Tags,
+		SavePath: reqPayload.SavePath,
+		Manage:   manage,
+		FindSubs: findSubs,
+		Notify:   notify,
+	})
 
-	err := qbittorrent.Client.AddTorrent(
-		reqPayload.URL,
-		reqPayload.Category,
-		reqPayload.Tags,
-		reqPayload.SavePath,
-	)
+	if errors.Is(err, service.ErrFindSubsNotJellyfin) {
+		return ctx.Status(400).JSON(
+			response.ErrorResponse{
+				Error: err.Error(),
+			},
+		)
+	}
 
 	if err != nil {
 		var clientErr *config.ClientError
