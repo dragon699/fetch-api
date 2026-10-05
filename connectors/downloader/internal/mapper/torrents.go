@@ -37,6 +37,7 @@ func TorrentsFromQBittorrent(torrents []qbittorrent.Torrent) []response.Torrent 
 			DateLastActivity:            utils.TimeFromUnix(torrentSrc.LastActivity),
 			DateCompleted:               utils.TimeFromUnix(torrentSrc.CompletionOn),
 			SizeTotalMB:                 utils.BytesToMegabytes(torrentSrc.TotalSize),
+			SizeTotalGB:                 utils.BytesToGigabytes(torrentSrc.TotalSize),
 			SizeDownloadedMB:            utils.BytesToMegabytes(torrentSrc.Downloaded),
 			SizeUploadedMB:              utils.BytesToMegabytes(torrentSrc.Uploaded),
 			SizeLeftMB:                  utils.BytesToMegabytes(torrentSrc.AmountLeft),

@@ -146,21 +146,30 @@ func loadSettings() (Settings, error) {
 	settings.ListenUrl = fmt.Sprintf("http://%s:%d", settings.ListenHost, settings.ListenPort)
 
 	if settings.OtelServiceVersion == "" {
-		_, currentFile, _, ok := runtime.Caller(0)
-
-		if !ok {
-			settings.OtelServiceVersion = "unknown"
-		} else {
-			currentDir := filepath.Dir(currentFile)
-			verFile := filepath.Join(currentDir, "..", "..", "VERSION")
-
-			if appVer, err := utils.ReadFile(verFile); err != nil {
-				settings.OtelServiceVersion = "unknown"
-			} else {
-				settings.OtelServiceVersion = strings.TrimSpace(appVer)
-			}
-		}
+		settings.OtelServiceVersion = readVersion()
 	}
 
 	return settings, nil
+}
+
+// readVersion looks for VERSION next to the source tree (go run) and then
+// next to the executable (container image, where it's copied to /app/VERSION)
+func readVersion() string {
+	candidates := []string{}
+
+	if _, currentFile, _, ok := runtime.Caller(0); ok {
+		candidates = append(candidates, filepath.Join(filepath.Dir(currentFile), "..", "..", "VERSION"))
+	}
+
+	if executable, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Join(filepath.Dir(executable), "VERSION"))
+	}
+
+	for _, verFile := range candidates {
+		if appVer, err := utils.ReadFile(verFile); err == nil {
+			return strings.TrimSpace(appVer)
+		}
+	}
+
+	return "unknown"
 }
