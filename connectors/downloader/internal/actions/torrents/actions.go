@@ -111,6 +111,12 @@ func SlackNotify(stage string, torrent response.Torrent) error {
 func JellyfinRename(torrent response.Torrent, torrentContentFiles []qbittorrent.TorrentContentFile, torrentContentNewFileNames []string) error {
 	var renameFailed bool = false
 
+	filesPathInfo, err := os.Stat(torrent.FilesPath)
+	if err != nil {
+		renameFailed = true
+	}
+	torrentIsDir := err == nil && filesPathInfo.IsDir()
+
 	for _, file := range torrentContentFiles {
 		filePath := path.Dir(file.Name)
 		fileName := path.Base(file.Name)
@@ -133,24 +139,26 @@ func JellyfinRename(torrent response.Torrent, torrentContentFiles []qbittorrent.
 		}
 	}
 
-	var dirNameNew string
-	dirPath := filepath.Dir(torrent.FilesPath)
-	dirName := filepath.Base(torrent.FilesPath)
+	if torrentIsDir {
+		var dirNameNew string
+		dirPath := filepath.Dir(torrent.FilesPath)
+		dirName := filepath.Base(torrent.FilesPath)
 
-	if len(torrentContentNewFileNames) == 1 {
-		dirNameNew = strings.TrimSuffix(torrentContentNewFileNames[0], path.Ext(torrentContentNewFileNames[0]))
-	} else {
-		dirNameNew = utils.BeautifyMovieName(dirName)
-	}
+		if len(torrentContentNewFileNames) == 1 {
+			dirNameNew = strings.TrimSuffix(torrentContentNewFileNames[0], path.Ext(torrentContentNewFileNames[0]))
+		} else {
+			dirNameNew = utils.BeautifyMovieName(dirName)
+		}
 
-	dirPathNew := path.Join(
-		dirPath,
-		dirNameNew,
-	)
+		dirPathNew := path.Join(
+			dirPath,
+			dirNameNew,
+		)
 
-	err := os.Rename(torrent.FilesPath, dirPathNew)
-	if err != nil {
-		renameFailed = true
+		err := os.Rename(torrent.FilesPath, dirPathNew)
+		if err != nil {
+			renameFailed = true
+		}
 	}
 
 	jellyfin.Client.RefreshLibrary()
