@@ -3,7 +3,6 @@ from typing import Any
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from common.telemetry.src.tracing.wrappers import traced
-from common.utils.helpers import DataUtils
 from fetch_api.settings import connectors, settings
 from fetch_api.src.telemetry.logging import log
 from fetch_api.src.client import ConnectorClient
@@ -30,6 +29,7 @@ class APIProcessor:
         }
 
         for upstream in upstreams:
+            response = None
             common_stream_log_attributes = {
                 **common_log_attributes.copy(),
                 'upstream_endpoint': upstream['endpoint']
@@ -55,7 +55,8 @@ class APIProcessor:
                         )
                     )
 
-                assert response.status_code in (200, 201)
+                if response.status_code not in (200, 201):
+                    raise RuntimeError(f'Upstream returned HTTP {response.status_code}')
                 
                 response_body = response.json()
                 results['items'].extend(response_body['items'])
@@ -72,6 +73,8 @@ class APIProcessor:
 
             except Exception as err:
                 upstream['status'] = 'failed'
+                if client.connector_name == 'ml' and response is not None:
+                    upstream['error_status'] = response.status_code
                 log.warning('Upstream fetch failed', extra={
                     **common_stream_log_attributes,
                     'error': str(err)
@@ -86,7 +89,7 @@ class APIProcessor:
                         requests_timeout=settings.ai_summary_requests_timeout
                     )
 
-                    upstream_ml_endpoint = 'ask/ollama'
+                    upstream_ml_endpoint = 'ask'
                     commong_ml_log_attributes = {
                         **common_log_attributes,
                         'upstream_ml_endpoint': upstream_ml_endpoint
@@ -104,17 +107,11 @@ class APIProcessor:
                                         separators=(',', ':')
                                     )
                                 )
-                            },
-                            cache_key=DataUtils.create_cache_key(
-                                connector_name=ml_client.connector_name,
-                                method='POST',
-                                endpoint=upstream_ml_endpoint,
-                                params={},
-                                data=DataUtils.omit_volatile_data(results['items'])
-                            )
+                            }
                         )
 
-                        assert response.status_code == 200
+                        if response.status_code != 200:
+                            raise RuntimeError(f'ML provider returned HTTP {response.status_code}')
 
                         response_body = response.json()
                         results['ai_summary'] = response_body['items'][0]
@@ -145,6 +142,9 @@ class APIProcessor:
             for upstream in upstreams
         ):
             status_code = 502
+            if client.connector_name == 'ml':
+                status_code = next((u['error_status'] for u in upstreams
+                                    if u.get('error_status') in (422, 502, 503, 504)), 502)
 
         else:
             status_code = 200

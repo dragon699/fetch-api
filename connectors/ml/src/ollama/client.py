@@ -30,7 +30,7 @@ class OllamaClient:
 
 
     @traced('ask ollama')
-    def ask_ollama(self, prompt: str, model: str, instructions: str = '', span=None) -> BaseMessage:
+    def ask(self, prompt: str, model: str, instructions: str = '', span=None) -> BaseMessage:
         span.set_attributes(
             reword({
                 'ollama.operation': 'ask',
@@ -48,6 +48,7 @@ class OllamaClient:
             model=model,
             keep_alive=f'{settings.default_keep_alive_minutes}m',
             temperature=settings.default_temperature,
+            client_kwargs={'timeout': settings.ollama_timeout_seconds},
             num_ctx=10200,
             num_thread=8
         )

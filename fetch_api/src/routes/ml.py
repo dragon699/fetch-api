@@ -1,4 +1,4 @@
-from fetch_api.settings import connectors
+from fetch_api.settings import connectors, settings
 from fetch_api.src.client import ConnectorClient
 from fetch_api.src.api_processor import APIProcessor
 from fetch_api.src.schemas.ml import MLBody
@@ -10,7 +10,7 @@ router = APIRouter()
 client = ConnectorClient(
     connectors['ml'].name,
     cache=connectors['ml'].cache,
-    requests_timeout=connectors['ml'].requests_timeout
+    requests_timeout=max(connectors['ml'].requests_timeout, settings.ai_summary_requests_timeout)
 )
 
 

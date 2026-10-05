@@ -1,18 +1,17 @@
 import os
-from langchain_core.messages import BaseMessage
+from connectors.ml.src.providers import QueryResult, providers
 from common.utils.system import read_file, render_template
 from common.utils.helpers import TimeUtils
 from common.telemetry.src.tracing.wrappers import traced
 from common.telemetry.src.tracing.helpers import reword
 from connectors.ml.settings import settings
 from connectors.ml.src.telemetry.logging import log
-from connectors.ml.src.api import OllamaClient, ollama_client
-from connectors.ml.src.ollama.query_processor import Processor
+from connectors.ml.src.query_processor import Processor
 
 
 
 class Querier:
-    def __init__(self, client: OllamaClient) -> None:
+    def __init__(self, client) -> None:
         self.instructions_template_path = settings.instructions_template_path
         
         self.client = client
@@ -42,11 +41,12 @@ class Querier:
 
     
     @traced('commit query')
-    def commit(self, provider: str, prompt: str, model: str | None = None, instructions: str = '', instructions_template: str | None = None, span=None) -> dict | None:
+    def commit(self, provider: str | None, prompt: str, model: str | None = None, instructions: str = '', instructions_template: str | None = None, span=None) -> dict:
         try:
             full_instructions = self.fetch(instructions, instructions_template)
+            provider, model = self.client.resolve(provider, model)
             payload = self.render(prompt, model, full_instructions)
-            response = self.send(provider, *payload.values())
+            response = self.send(provider, **payload)
             result = self.process(response)
 
             span.set_attributes(
@@ -56,7 +56,7 @@ class Querier:
                     'querier.query.prompt': payload['prompt'],
                     'querier.query.model': payload['model'],
                     'querier.query.instructions': payload['instructions'],
-                    'querier.query.response': response.content
+                    'querier.query.response': response.answer
                 })
             )
 
@@ -68,6 +68,7 @@ class Querier:
                 'querier.error.message': str(err),
                 'querier.error.type': type(err).__name__
             })
+            raise
 
 
     @traced('fetch instructions')
@@ -124,41 +125,13 @@ class Querier:
 
 
     @traced('send query')
-    def send(self, provider: str, prompt: str, model: str = None, instructions: str = '', span=None) -> BaseMessage | None:
-        try:
-            response = self.client.ask_ollama(
-                prompt=prompt,
-                model=model,
-                instructions=instructions
-            )
+    def send(self, provider: str, prompt: str, model: str = None, instructions: str = '', span=None) -> QueryResult:
+        return self.client.ask(provider, prompt, model, instructions)
 
-            span.set_attributes(
-                reword({
-                    'querier.query.prompt': prompt,
-                    'querier.query.model': model,
-                    'querier.query.instructions': instructions,
-                    'querier.query.response': response.content
-                })
-            )
-
-            return response
-
-        except Exception as err:
-            span.set_attributes(
-                reword({
-                    'querier.error.message': f'Error occurred while sending query: {err}',
-                    'querier.error.type': type(err).__name__,
-                    'querier.query.prompt': prompt,
-                    'querier.query.model': model,
-                    'querier.query.instructions': instructions
-                })
-            )
-            return None
-        
 
     @traced('process query response')
-    def process(self, response: BaseMessage, span=None) -> dict:
+    def process(self, response: QueryResult, span=None) -> dict:
         return Processor.process(response)
 
 
-querier = Querier(ollama_client)
+querier = Querier(providers)

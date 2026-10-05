@@ -32,7 +32,7 @@ class FetchAPISettings(BaseSettings):
     connector_health_check_interval_seconds: int = 20
     connector_health_retry_interval_seconds: int = 5
 
-    ai_summary_requests_timeout: int = 4
+    ai_summary_requests_timeout: int = 100
 
 
     def model_post_init(self, __context: Any) -> None:

@@ -178,10 +178,32 @@ class ConnectorClient:
             raise err
 
 
+    def resolve_ml_request(self, endpoint: str, data: dict) -> dict:
+        response = requests.get(f'{self.url}/api/config', headers=self.headers, timeout=5)
+        response.raise_for_status()
+        config = response.json()
+        provider = endpoint.split('/', 1)[1] if '/' in endpoint else data.get('provider')
+        provider = provider or config['default_provider']
+
+        if provider not in config['providers']:
+            raise ValueError(f'Unsupported ML provider: {provider}')
+
+        model = data.get('model') or config['providers'][provider]['default_model']
+
+        if not model:
+            raise ValueError(f'No default model configured for {provider}')
+
+        return {**data, 'provider': provider, 'model': model}
+
+
     @traced('POST /:connector')
     def post(self, endpoint: str, params: dict | None = None, data: dict | None = None, cache_key: tuple | None = None, span=None) -> Any:
         params = params or {}
-        data = data or {}        
+        data = data or {}
+
+        if self.connector_name == 'ml' and endpoint in ('ask', 'ask/ollama', 'ask/openclaw'):
+            data = self.resolve_ml_request(endpoint, data)
+            cache_key = None
 
         span.set_attributes(
             reword({

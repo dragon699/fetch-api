@@ -32,5 +32,5 @@ class RoutesLoader:
         app.include_router(internal.router, prefix="/api")
         app.include_router(ask.router, prefix="/ask")
         log.info(
-            f'Listening for incoming query requests on {settings.listen_host}:{settings.listen_port} and forwarding to Ollama at {settings.url}'
+            f'Listening for incoming query requests on {settings.listen_host}:{settings.listen_port} using default provider {settings.default_provider}'
         )
