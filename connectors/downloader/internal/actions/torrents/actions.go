@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"connector-downloader/internal/qbittorrent"
 	t "connector-downloader/internal/telemetry"
 )
+
+var extraVideoRe = regexp.MustCompile(`(?i)(?:^|[^a-z0-9])(?:sample|trailer|teaser|promo|proof|rarbg)(?:[^a-z0-9]|$)`)
 
 func TorrentPostDownload(torrent response.Torrent) ([]qbittorrent.TorrentContentFile, []string, error) {
 	torrentContent, err := qbittorrent.Client.ListTorrentContents(torrent.Hash)
@@ -45,6 +48,10 @@ func TorrentPostDownload(torrent response.Torrent) ([]qbittorrent.TorrentContent
 
 		fileName := path.Base(file.Name)
 		fileExt := path.Ext(fileName)
+
+		if extraVideoRe.MatchString(strings.TrimSuffix(fileName, fileExt)) {
+			continue
+		}
 
 		torrentContentFiles = append(torrentContentFiles, file)
 		torrentContentNewFileNames = append(
@@ -133,6 +140,16 @@ func JellyfinRename(torrent response.Torrent, torrentContentFiles []qbittorrent.
 		destPath := path.Join(torrent.SavePath, filePath)
 		destFile := path.Join(destPath, fileNameNew)
 
+		if srcFile == destFile {
+			continue
+		}
+
+		if _, statErr := os.Stat(destFile); statErr == nil {
+			renameFailed = true
+			t.Log.Error("Rename target already exists, keeping both files", "action", "jellyfin:rename", "torrent_hash", torrent.Hash, "src", srcFile, "dest", destFile)
+			continue
+		}
+
 		err := os.Rename(srcFile, destFile)
 		if err != nil {
 			renameFailed = true
@@ -155,9 +172,13 @@ func JellyfinRename(torrent response.Torrent, torrentContentFiles []qbittorrent.
 			dirNameNew,
 		)
 
-		err := os.Rename(torrent.FilesPath, dirPathNew)
-		if err != nil {
-			renameFailed = true
+		if dirPathNew != torrent.FilesPath {
+			if _, statErr := os.Stat(dirPathNew); statErr == nil {
+				renameFailed = true
+				t.Log.Error("Rename target directory already exists, keeping both", "action", "jellyfin:rename", "torrent_hash", torrent.Hash, "src", torrent.FilesPath, "dest", dirPathNew)
+			} else if err := os.Rename(torrent.FilesPath, dirPathNew); err != nil {
+				renameFailed = true
+			}
 		}
 	}
 
