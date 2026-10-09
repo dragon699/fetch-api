@@ -25,7 +25,7 @@ func (instance *ActionsRunner) CreateSchedule() {
 		config.Config.TorrentActionsNextCheck = &nextCheckTime
 
 		jobTag := "torrent_actions"
-		job, _ := instance.Scheduler.Every(config.Config.TorrentActionsIntervalSeconds).Seconds().Do(instance.run)
+		job, _ := instance.Scheduler.Every(config.Config.TorrentActionsIntervalSeconds).Seconds().SingletonMode().Do(instance.run)
 		job.Tag(jobTag)
 		config.Config.TorrentActionsJobID = &jobTag
 	}
