@@ -21,8 +21,8 @@ type JellyfinClient struct {
 func (instance *JellyfinClient) Init() {
 	instance.APIBaseURL = config.Config.JellyfinUrl
 	instance.APIDefaultHeaders = map[string]string{
-		"Content-Type": "application/json",
-		"X-Emby-Token": config.Config.JellyfinAPIKey,
+		"Content-Type":  "application/json",
+		"Authorization": fmt.Sprintf(`MediaBrowser Token="%s"`, config.Config.JellyfinAPIKey),
 	}
 	instance.Client = &http.Client{
 		Timeout: 10 * time.Second,
